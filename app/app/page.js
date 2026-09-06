@@ -14,9 +14,11 @@ export default function DashboardPage() {
       document.body.appendChild(el);
       return el;
     };
-    add("link", { rel: "stylesheet", href: "/a/app.css" });
-    add("script", { src: "/a/icons.js" });
-    add("script", { src: "/a/app.js" }, () => window.__pautinBoot && window.__pautinBoot());
+    // naikkan V tiap rilis aset berubah agar cache browser/CF tidak menyajikan versi lama
+    const V = "20260907a";
+    add("link", { rel: "stylesheet", href: `/a/app.css?v=${V}` });
+    add("script", { src: `/a/icons.js?v=${V}` });
+    add("script", { src: `/a/app.js?v=${V}` }, () => window.__pautinBoot && window.__pautinBoot());
   }, []);
 
   return (

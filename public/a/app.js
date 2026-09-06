@@ -144,9 +144,15 @@ function renderAuth(mode) {
       </div>
       ${m === "signup" ? `<div class="fld"><label>Email <span class="req">wajib — untuk verifikasi</span></label><input id="aE" type="email" autocomplete="email" maxlength="120" placeholder="kamu@contoh.com"></div>` : ""}
       ${m === "signup" ? '<div class="fld"><label>Nama tampilan <span class="opt">opsional</span></label><input id="aN" maxlength="60" placeholder="mis. Rizky Pratama"></div>' : ""}
-      <div class="fld"><label>Kata sandi ${m === "signup" ? '<span class="opt">min. 6 karakter</span>' : ""}</label>
+      <div class="fld"><label>Kata sandi ${m === "signup" ? '<span class="req">min. 8 karakter + angka</span>' : ""}</label>
         <div class="pwrow"><input id="aP" type="password" autocomplete="${m === "signup" ? "new-password" : "current-password"}" placeholder="••••••••"><button class="eye" data-act="eyetoggle" aria-label="Lihat kata sandi">${ic("eye")}</button></div>
+        ${m === "signup" ? `<div class="pwstr" id="pwStr"><i></i><i></i><i></i><i></i><span id="pwLbl">Kekuatan kata sandi</span></div>
+        <div class="pwchk" id="pwChk"><span data-k="len">8+ karakter</span><span data-k="num">angka</span><span data-k="mix">huruf kecil & besar</span></div>` : ""}
       </div>
+      ${m === "signup" ? `<div class="fld"><label>Ulangi kata sandi</label>
+        <div class="pwrow"><input id="aP2" type="password" autocomplete="new-password" placeholder="••••••••"><button class="eye" data-act="eyetoggle2" aria-label="Lihat kata sandi">${ic("eye")}</button></div>
+        <div class="hint" id="p2Hint" style="font-weight:800">&nbsp;</div>
+      </div>` : ""}
     </div>
     <button class="act abtn" id="aGo" data-act="submit">${m === "signup" ? "Daftar dan kirim verifikasi" : "Masuk"} ${ic("arrowR")}</button>
     <div id="tstWrap" style="margin-top:12px;display:flex;justify-content:center"></div>
@@ -195,7 +201,7 @@ function ensureAuthDelegation() {
     if (!t) return;
     const act = t.dataset.act;
     if (act === "swap") { ev.preventDefault(); renderAuth(window.__authMode === "mail" ? "login" : window.__authMode === "signup" ? "login" : "signup"); }
-    else if (act === "eyetoggle") { const i = t.parentElement.querySelector("input"); i.type = i.type === "password" ? "text" : "password"; t.innerHTML = i.type === "password" ? ic("eye") : ic("eyeOff"); }
+    else if (act === "eyetoggle" || act === "eyetoggle2") { const row = t.closest(".pwrow"); const i = row && row.querySelector("input"); if (i) { i.type = i.type === "password" ? "text" : "password"; t.innerHTML = i.type === "password" ? ic("eye") : ic("eyeOff"); } }
     else if (act === "submit" && window.__authOnSubmit) window.__authOnSubmit();
     else if (act === "resend" && window.__authOnResend) window.__authOnResend();
   };
@@ -223,6 +229,23 @@ function bindAuthActions(mode) {
         }).catch(() => { h.innerHTML = ""; });
       }, 300);
     });
+    const aP2 = $("#aP2");
+    const strength = () => {
+      const v = aP.value, has = { len: v.length >= 8, num: /\d/.test(v), mix: /[a-z]/.test(v) && /[A-Z]/.test(v) };
+      const score = (has.len ? 1 : 0) + (has.num ? 1 : 0) + (has.mix ? 1 : 0);
+      const w = $("#pwStr"), lbl = $("#pwLbl");
+      if (w) { [...w.querySelectorAll("i")].forEach((b, i) => b.classList.toggle("f", i < score)); w.classList.toggle("s1", score === 1); w.classList.toggle("s2", score === 2); w.classList.toggle("s3", score === 3); }
+      if (lbl) { lbl.textContent = !v ? "Kekuatan kata sandi" : score <= 1 ? "Lemah" : score === 2 ? "Sedang" : "Kuat"; lbl.className = score === 3 ? "good" : score === 2 ? "mid" : !v ? "" : "bad"; }
+      if ($("#pwChk")) ["len", "num", "mix"].forEach((k) => { const c = $("#pwChk").querySelector(`[data-k="${k}"]`); if (c) c.classList.toggle("on", !!has[k]); });
+      match();
+    };
+    const match = () => {
+      const h = $("#p2Hint"); if (!h || !aP2) return;
+      if (!aP2.value) { h.innerHTML = "&nbsp;"; return; }
+      h.innerHTML = aP2.value === aP.value ? '<span style="color:var(--ok)">Sama. Bagus.</span>' : '<span style="color:var(--bad)">Belum sama dengan kata sandi di atas.</span>';
+    };
+    aP.addEventListener("input", strength);
+    if (aP2) { aP2.addEventListener("input", match); aP2.addEventListener("keydown", (e) => { if (e.key === "Enter") window.__authOnSubmit(); }); }
   }
   window.__authOnSubmit = () => {
     const go = $("#aGo");
@@ -239,7 +262,10 @@ function bindAuthActions(mode) {
       const n = ($("#aN") ? $("#aN").value : "").trim();
       if (!/^[a-z0-9]{3,20}$/.test(u)) return done("Username 3-20 huruf/angka kecil, tanpa spasi.");
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return done("Alamat email tidak valid.");
-      if (p.length < 6) return done("Kata sandi minimal 6 karakter.");
+      const p2v = $("#aP2") ? $("#aP2").value : p;
+      if (p.length < 8) return done("Kata sandi minimal 8 karakter.");
+      if (!/\d/.test(p)) return done("Kata sandi harus mengandung minimal satu angka.");
+      if (p !== p2v) return done("Ulangi kata sandi tidak sama dengan kata sandi.");
       send("register", "POST", { username: u, name: n, email: em, password: p, turnstileToken: tsToken() })
         .then((d) => {
           if (!d.ok) return done(d.error || "Gagal mendaftar.");

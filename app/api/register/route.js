@@ -33,8 +33,8 @@ export async function POST(req) {
     return NextResponse.json({ error: "Username 3–20 huruf/angka kecil (a–z, 0–9), tanpa spasi." }, { status: 400 });
   if (RESERVED.has(username))
     return NextResponse.json({ error: "Username itu sudah dipakai sistem." }, { status: 400 });
-  if (password.length < 6)
-    return NextResponse.json({ error: "Kata sandi minimal 6 karakter." }, { status: 400 });
+  if (password.length < 8 || !/\d/.test(password))
+    return NextResponse.json({ error: "Kata sandi minimal 8 karakter dan mengandung angka." }, { status: 400 });
   if (!EMAIL_RE.test(email) || email.length > 120)
     return NextResponse.json({ error: "Alamat email tidak valid." }, { status: 400 });
 
