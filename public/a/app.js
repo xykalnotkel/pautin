@@ -75,18 +75,22 @@ window.__pautinBoot = async function () {
     const d = await get("me");
     S.u = d.user; S.links = d.links; S.totalClicks = d.total_clicks;
     renderDashboard(qs.get("signup") === "1");
-    document.title = "Dashboard — " + S.u.username + " | Pautin";
   } catch (e) {
     await ensureCfg();
     renderAuth(qs.get("signup") === "1" ? "signup" : "login");
   }
-  history.replaceState(null, "", "/dashboard");
+  normDashUrl();
 };
+function normDashUrl() {
+  const m = location.pathname.match(/^\/dashboard\/([a-z]+)$/);
+  if (m && m[1] && PAGE_T[m[1]]) return; // rute sub-halaman valid: pertahankan
+  history.replaceState(null, "", "/dashboard");
+}
 window.__pautinEnter = async function (welcome) {
   const d = await get("me");
   S.u = d.user; S.links = d.links; S.totalClicks = d.total_clicks;
   renderDashboard(!!welcome);
-  document.title = "Dashboard — " + S.u.username + " | Pautin";
+  normDashUrl();
 };
 
 /* ================= AUTH ================= */
@@ -320,13 +324,33 @@ function bindAuthActions(mode) {
   aU.addEventListener("keydown", (e) => { if (e.key === "Enter") window.__authOnSubmit(); });
 }
 
-/* ================= navigasi sidebar (menu dashboard) ================= */
-function navItem(k, label, badgeId) {
-  return `<button type="button" class="ni" data-nav="${k}"><span>${label}</span>${badgeId ? `<i class="nb" id="${badgeId}">0</i>` : ""}</button>`;
-}
-function navLink(href, label) {
-  return `<a class="ni" href="${href}"><span>${label}</span></a>`;
-}
+/* ================= navigasi sidebar & router halaman ================= */
+const PG = {
+  home: ["Beranda", "/dashboard", ""],
+  statistik: ["Statistik 30 hari", "/dashboard/statistik", "nViewCnt"],
+  tautan: ["Tautan saya", "/dashboard/tautan", "nLinkCnt"],
+  tambah: ["Tambah tautan", "/dashboard/tautan?add=1", ""],
+  grup: ["Grup & folder", "/dashboard/grup", ""],
+  bagikan: ["Bagikan halaman", "/dashboard/bagikan", ""],
+  qr: ["QR code", "/dashboard/qr", ""],
+  halaman: ["Halaman publik", "/dashboard/halaman", ""],
+  profil: ["Edit nama & bio", "/dashboard/profil", ""],
+  foto: ["Foto profil", "/dashboard/profil?bag=foto", ""],
+  keamanan: ["Verifikasi email", "/dashboard/keamanan?bag=verif", ""],
+  pass: ["Ganti kata sandi", "/dashboard/keamanan?bag=sandi", ""],
+  tampilan: ["Pratinjau & tema", "/dashboard/tampilan", ""],
+  pilih: ["Pilih tema", "/dashboard/tampilan?bag=tema", ""],
+  tombol: ["Bentuk tombol", "/dashboard/tampilan?bag=tombol", ""],
+  daftar: ["Gaya daftar", "/dashboard/tampilan?bag=daftar", ""],
+  bentukFoto: ["Bentuk foto", "/dashboard/tampilan?bag=bentukfoto", ""],
+  huruf: ["Gaya huruf", "/dashboard/tampilan?bag=huruf", ""],
+  aksen: ["Warna aksen", "/dashboard/tampilan?bag=aksen", ""],
+  panduan: ["Panduan cepat", "/dashboard/panduan", ""],
+};
+const PAGE_T = { home: "Beranda", tautan: "Tautan saya", grup: "Grup & folder", statistik: "Statistik", profil: "Profil", keamanan: "Keamanan", bagikan: "Bagikan", qr: "QR code", halaman: "Halaman publik", tampilan: "Tampilan & tema", panduan: "Panduan" };
+const pageNav = (k) => { const [l, p, b] = PG[k] || PG.home; return `<a class="ni" href="${p}" data-p="${k}"><span>${l}</span>${b ? `<i class="nb" id="${b}">0</i>` : ""}</a>`; };
+const actNav = (k, l, badge) => `<button type="button" class="ni" data-nav="${k}"><span>${l}</span>${badge ? `<i class="nb" id="${badge}">0</i>` : ""}</button>`;
+const extNav = (href, l) => `<a class="ni" href="${href}"><span>${l}</span></a>`;
 function navGroup(gid, title, inner) {
   return `<button type="button" class="ngt" data-ngt="${gid}" aria-expanded="true">${title}${ic("chevD")}</button>
   <div class="ng" data-ng="${gid}">${inner}</div>`;
@@ -335,23 +359,35 @@ function navHtmlDash() {
   return `<div class="card" id="navCard">
     <div class="cardh"><div class="t">${ic("menu")} Menu</div></div>
     ${navGroup("ng1", "Ringkasan",
-      navItem("home", "Beranda") + navItem("refresh", "Segarkan data") + navItem("stats", "Statistik 30 hari", "nViewCnt") + navItem("links", "Tautan saya", "nLinkCnt") + navItem("add", "Tambah tautan") + navItem("groups", "Grup & folder"))}
+      pageNav("home") + actNav("refresh", "Segarkan data") + pageNav("statistik") + pageNav("tautan") + pageNav("tambah") + pageNav("grup"))}
     ${navGroup("ng2", "Bagikan",
-      navItem("share", "Bagikan halaman") + navItem("qr", "QR code") + navItem("page", "Buka halaman publik") + navItem("copyurl", "Salin link halaman") + navItem("copyuser", "Salin username"))}
+      pageNav("bagikan") + pageNav("qr") + pageNav("halaman") + actNav("copyurl", "Salin link halaman") + actNav("copyuser", "Salin username"))}
     ${navGroup("ng3", "Akun",
-      navItem("profile", "Edit nama & bio") + navItem("photo", "Foto profil") + navItem("security", "Verifikasi email") + navItem("pass", "Ganti kata sandi") + navItem("logout", "Keluar"))}
+      pageNav("profil") + pageNav("foto") + pageNav("keamanan") + pageNav("pass") + actNav("logout", "Keluar"))}
     ${navGroup("ng4", "Tampilan & tema",
-      navItem("theme", "Pratinjau & tema") + navItem("picktheme", "Pilih tema") + navItem("radius", "Bentuk tombol") + navItem("grid", "Gaya daftar") + navItem("av", "Bentuk foto") + navItem("font", "Gaya huruf") + navItem("accent", "Warna aksen") + navItem("defaults", "Reset tampilan"))}
+      pageNav("tampilan") + pageNav("pilih") + pageNav("tombol") + pageNav("daftar") + pageNav("bentukFoto") + pageNav("huruf") + pageNav("aksen") + actNav("defaults", "Reset tampilan"))}
     ${navGroup("ng5", "Bantuan & info",
-      navItem("guide", "Panduan cepat") + navLink("/about", "Tentang Pautin") + navLink("/legal/terms", "Syarat & ketentuan") + navLink("/legal/privacy", "Kebijakan privasi") + navLink("/legal/license", "Lisensi & kredit"))}
+      pageNav("panduan") + extNav("/feedback", "Feedback, saran & kritik") + extNav("/about", "Tentang Pautin") + extNav("/legal/terms", "Syarat & ketentuan") + extNav("/legal/privacy", "Kebijakan privasi") + extNav("/legal/license", "Lisensi & kredit"))}
     ${navGroup("ng6", "Lainnya",
-      navItem("navtoggle", "Sembunyikan panel menu"))}
+      actNav("navtoggle", "Sembunyikan panel menu"))}
   </div>`;
 }
 
-/* ================= DASHBOARD ================= */
-function renderDashboard(isNew) {
+/* ================= shell dashboard + router ================= */
+const qObj = () => { const o = {}; new URLSearchParams(location.search).forEach((v, k) => (o[k] = v)); return o; };
+function curView() {
+  const m = location.pathname.match(/^\/dashboard\/([a-z]+)/);
+  return m && PAGE_T[m[1]] ? m[1] : "home";
+}
+function goPath(u, replace) {
+  if (u === location.pathname + location.search) { routeView(); window.scrollTo({ top: 0 }); return; }
+  if (replace) history.replaceState(null, "", u); else history.pushState(null, "", u);
+  routeView();
+  window.scrollTo({ top: 0 });
+}
+function renderDashboard(welcome) {
   const u = S.u;
+  S.welcome = !!welcome;
   rootEl().innerHTML = `
   <div class="tb"><div class="tbi">
     <a class="br" href="/">${ic("logoSm")}<span class="hide-sm">Pautin</span></a>
@@ -361,9 +397,9 @@ function renderDashboard(isNew) {
       <div class="mdrop">
         <a class="mi" href="/u/${esc(u.username)}" target="_blank" rel="noopener"><span class="ava">${esc(initials(u.name))}</span><span><b>@${esc(u.username)}</b><span class="s">Halaman publikmu</span></span></a>
         <div class="msep"></div>
-        <button class="mi" data-act="copyurl"><span class="ic">${ic("copy")}</span><span>Salin link halaman</span></button>
-        <button class="mi" data-act="share"><span class="ic">${ic("share")}</span><span>Bagikan halaman</span></button>
-        <button class="mi" data-act="profile"><span class="ic">${ic("user")}</span><span>Edit profil dan foto</span></button>
+        <a class="mi" href="/dashboard"><span class="ic">${ic("menu")}</span><span>Beranda dashboard</span></a>
+        <a class="mi" href="/dashboard/profil"><span class="ic">${ic("users")}</span><span>Edit profil dan foto</span></a>
+        <a class="mi" href="/dashboard/bagikan"><span class="ic">${ic("share")}</span><span>Bagikan halaman</span></a>
         <div class="msep"></div>
         <button class="mi" data-act="logout"><span class="ic" style="color:var(--bad);background:#FBEDEA">${ic("logout")}</span><span>Keluar</span></button>
       </div>
@@ -374,104 +410,443 @@ function renderDashboard(isNew) {
   <div class="lay">
     <aside class="side">
       ${navHtmlDash()}
-      <div class="card" id="cardTheme">
-        <div class="cardh"><div class="t">${ic("palette")} Pratinjau dan tema</div></div>
-        <div class="pvtop"><a href="/u/${esc(u.username)}" target="_blank" rel="noopener">@${esc(u.username)}</a>
-          <button class="ob oj" data-act="profile" title="Edit profil">${ic("pencil")}</button>
-          <button class="ob" data-act="view" title="Buka halaman">${ic("external")}</button>
-        </div>
-        <div class="pvb" id="pvb">
-          <div class="av2" id="pvAva">${u.avatar ? `<img src="${esc(cloudOpt(u.avatar, 140))}" alt="">` : esc(initials(u.name))}</div>
-          <div class="nm" id="pvName">${esc(u.name)}</div>
-          <div class="bi" id="pvBio">${esc(u.bio || "Tambahkan bio singkat dari menu Edit profil.")}</div>
-          <div class="ln" id="pvRows"><i>${ic("linkUI")}</i><i>${ic("linkUI")}</i><i>${ic("linkUI")}</i></div>
-        </div>
-        <div class="themes" id="thRow"></div>
-        <div class="sectag" style="padding:0 18px">Bentuk tombol</div>
-        <div class="shape-row" id="radRow"></div>
-        <div class="sectag" style="padding:16px 18px 8px">Gaya daftar tautan</div>
-        <div class="shape-row" id="gridRow"></div>
-        <div class="sectag" style="padding:16px 18px 8px">Bentuk foto profil</div>
-        <div class="shape-row" id="avRow"></div>
-        <div class="sectag" style="padding:16px 18px 8px">Gaya huruf</div>
-        <div class="shape-row" id="fontRow"></div>
-        <div class="sectag" style="padding:16px 18px 8px">Warna aksen <span class="opt">opsional</span></div>
-        <div class="accrow" id="accRow"></div>
-      </div>
-
-      <div class="card">
-        <div class="cardh"><div class="t">${ic("chart")} Statistik</div></div>
-        <div class="stat-grid">
-          <div class="stat"><div class="v" id="stViews">0</div><div class="k">Kunjungan</div></div>
-          <div class="stat"><div class="v" id="stClicks">0</div><div class="k">Klik tautan</div></div>
-          <div class="stat"><div class="v" id="stLinks">0</div><div class="k">Tautan</div></div>
-          <div class="stat"><div class="v" id="stJoin">-</div><div class="k">Sejak</div></div>
-        </div>
-        <button class="act" data-act="stats" style="width:100%;margin-top:14px">${ic("chart")} Grafik 30 hari</button>
-      </div>
-
-      <div class="card">
-        <div class="cardh"><div class="t">${ic("linkUI")} Halaman publikmu</div></div>
+      <div class="card sidecard" style="margin-top:2px">
         <div class="cardbody">
-          <div class="urlchip"><span id="miniUrl">${esc(loc())}</span><button class="ob" data-act="copyurl" title="Salin">${ic("copy")}</button></div>
-          <button class="act" data-act="share" style="width:100%">${ic("share")} Bagikan halaman</button>
+          <div class="sectag">${ic("heart")} Kamu sudah hebat!</div>
+          <p class="mini" style="line-height:1.6">Ada ide, saran, atau kritik? Kabari kami lewat halaman Feedback — dibaca sungguhan.</p>
+          <a class="tbtn" href="/feedback" style="width:100%;justify-content:center;display:flex">Kirim feedback</a>
         </div>
       </div>
     </aside>
-
-    <main class="main">
-      ${isNew ? `<div class="notebar" id="welcome">${ic("check")} <span><b>Halamanmu jadi.</b> Ini link pribadimu yang bisa kamu bagikan ke mana saja. Tambahkan tautan pertamamu di bawah.</span><button class="x" data-act="closenote" aria-label="Tutup">${ic("x")}</button></div>` : ""}
-      <div class="hrow">
-        <h2>${ic("linkUI")} Tautanmu</h2><span class="sub2" id="listSub"></span>
-        <div class="grow2"></div>
-        <button class="act" data-act="addtoggle">${ic("plus")} <span id="addLbl">Tambah Tautan</span></button>
-      </div>
-
-      <div class="card" id="addCard" hidden>
-        <div style="padding:18px">
-          <div class="frm">
-            <div class="fld full"><label>Judul</label><input id="lT" maxlength="90" placeholder="mis. Channel YouTube-ku"></div>
-            <div class="fld full"><label>Tautan (URL)</label><input id="lU" maxlength="500" placeholder="mis. https://youtube.com/@namamu">
-              <div class="hint">Media sosial terdeteksi otomatis. Awalan https:// ditambahkan bila tidak ada.</div>
-            </div>
-            <div class="fld full"><label>Grup <span class="opt">opsional</span></label><input id="lG" maxlength="40" placeholder="mis. Sosmed, Toko, Artikel" autocomplete="off">
-              <div class="hint">Tautan dengan grup sama akan tampil di bawah judul yang sama di halaman publikmu.</div>
-            </div>
-            <div class="fld full"><label>Ikon <span class="opt">pilih salah satu</span></label>
-              <div style="display:flex;gap:12px;align-items:center">
-                <span class="pickprev" id="pickPrev">${gn("globe")}</span>
-                <div class="icon-grid" id="iconGrid"></div>
-              </div>
-            </div>
-            <div class="er" id="lErr"></div>
-            <div class="frow">
-              <button class="act" data-act="savelink" style="flex:1">${ic("check")} <span id="saveLbl">Simpan Tautan</span></button>
-              <button class="tbtn" data-act="canceladd">Batal</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div id="listHead"><div class="t">Daftar tautan <span class="cnt" id="lCnt">0</span></div>
-          <div class="grow"></div>
-          <span class="lhint hide-sm">${ic("drag")} seret untuk mengurutkan</span>
-        </div>
-        <div id="linkList"></div>
-      </div>
-    </main>
+    <main class="main" id="pgMain"></main>
   </div>
-
   <div class="mv" id="mv"></div>
   <a id="fb" href="/">${ic("logoSm")}Pautin</a>`;
-
-  paintAvatar();
-  renderThemes();
-  renderIconPicker();
-  updateStats();
-  renderLinks();
-  bindDashEvents();
+  bindRootEvents();
+  routeView();
 }
+function routeView() {
+  const v = curView(), q = qObj();
+  const main = $("#pgMain"); if (!main) return;
+  const build = { home: viewHome, tautan: viewLinks, grup: viewGroups, statistik: viewStats, profil: viewProfile, keamanan: viewSecurity, bagikan: viewShare, qr: viewQr, halaman: viewPage, tampilan: viewTheme, panduan: viewGuide }[v] || viewHome;
+  main.innerHTML = build(q);
+  const tt = { home: "Beranda", tautan: "Tautan saya", grup: "Grup & folder", statistik: "Statistik", profil: "Profil", keamanan: "Keamanan", bagikan: "Bagikan", qr: "QR code", halaman: "Halaman publik", tampilan: "Tampilan & tema", panduan: "Panduan" };
+  document.title = (tt[v] || "Dashboard") + " — " + S.u.username + " | Pautin";
+  $$("#navCard a[data-p]").forEach((a) => {
+    let hp = ""; try { hp = new URL(a.getAttribute("href"), location.href).pathname; } catch {}
+    const hq = a.getAttribute("href") || "";
+    const q = hq.indexOf("?") >= 0 ? hq.slice(hq.indexOf("?")) : "";
+    a.classList.toggle("on", hp === location.pathname && (!q || q === location.search));
+  });
+  paintAvatar();
+  afterView(v, q);
+}
+function afterView(v, q) {
+  if (v === "tautan") {
+    S.showAdd = false; S.editing = null; S.iconKey = "";
+    renderIconPicker();
+    renderLinks();
+    if (q.add === "1") { toggleAdd(true); setTimeout(() => scrollToEl($("#addCard")), 120); }
+    if (q.edit) { const id = Number(q.edit); if (S.links.some((l) => l.id === id)) openEdit(id); }
+  } else if (v === "tampilan") {
+    renderThemes();
+    const bag = { tema: "#thRow", tombol: "#radRow", daftar: "#gridRow", bentukfoto: "#avRow", huruf: "#fontRow", aksen: "#accRow" }[q.bag || "tema"];
+    if (bag) setTimeout(() => scrollToEl($(bag)), 150);
+  } else if (v === "profil") {
+    if (q.bag === "foto") setTimeout(() => scrollToEl($("#avaPrev")), 150);
+  } else if (v === "keamanan") {
+    if (q.bag === "sandi") setTimeout(() => scrollToEl($("#psForm")), 150);
+    else setTimeout(() => scrollToEl($("#pvCard")), 120);
+  } else if (v === "statistik") { loadPageStats(); }
+  else if (v === "qr") { const e = $("#qr"); if (e) makeQr(e, loc()); }
+  bindViewHooks(v);
+}
+
+/* ================= konten halaman ================= */
+function pageHead(title, sub, right) {
+  return `<div class="phead"><div><h2>${title}</h2>${sub ? `<p>${sub}</p>` : ""}</div>${right || ""}</div>`;
+}
+function linkRowMini(l, opts) {
+  opts = opts || {};
+  return `<div class="ll mini">
+    <span class="e">${linkIcon(l)}</span>
+    <div class="inf"><div class="ti">${esc(l.title)}<span class="kind">${esc(l.kind)}</span></div>
+      <div class="ur">${esc(l.url)}${l.grp ? `<span class="grtag">${esc(l.grp)}</span>` : ""}</div></div>
+    ${opts.grouped ? "" : `<a class="ob oj" href="/dashboard/tautan?edit=${l.id}" title="Edit">${ic("pencil")}</a>`}
+    <span class="cl">${ic("eye")} ${fmtNum(l.clicks)}</span>
+  </div>`;
+}
+function viewHome() {
+  const u = S.u, links = S.links, recent = links.slice(0, 4);
+  const hello = (u.name || u.username).trim().split(/\s+/)[0];
+  return `
+  ${S.welcome ? `<div class="notebar" id="welcome">${ic("check")} <span><b>Halamanmu jadi.</b> Ini link pribadimu yang bisa kamu bagikan ke mana saja. Tambahkan tautan pertamamu di bawah.</span><button class="x" data-act="closenote" aria-label="Tutup">${ic("x")}</button></div>` : ""}
+  ${pageHead(`Halo, ${esc(hello)}!`, `Ringkasan halaman <b>@${esc(u.username)}</b> — satu alamat untuk semua tautanmu.`)}
+  <div class="stat-grid big">
+    <a class="stat" href="/dashboard/statistik"><div class="v" id="stViews">${fmtNum(u.views)}</div><div class="k">Kunjungan</div></a>
+    <a class="stat" href="/dashboard/statistik"><div class="v" id="stClicks">${fmtNum(S.totalClicks)}</div><div class="k">Klik tautan</div></a>
+    <a class="stat" href="/dashboard/tautan"><div class="v" id="stLinks">${links.length}</div><div class="k">Tautan</div></a>
+    <a class="stat" href="/dashboard/profil"><div class="v" id="stJoin">${fmtDate(u.created_at)}</div><div class="k">Sejak</div></a>
+  </div>
+  <div class="qgrid">
+    <a class="qcard" href="/dashboard/tautan?add=1"><span class="qi" style="background:#E4EFEA;color:var(--green)">${ic("plus")}</span><div><b>Tambah tautan</b><span>Isi judul, URL, dan grup</span></div></a>
+    <a class="qcard" href="/dashboard/statistik"><span class="qi" style="background:#FBE9E4;color:var(--orange)">${ic("chart")}</span><div><b>Lihat statistik</b><span>Grafik 30 hari & terpopuler</span></div></a>
+    <a class="qcard" href="/dashboard/tampilan"><span class="qi" style="background:#EFEAF9;color:#7C3AED">${gn("palette")}</span><div><b>Atur tampilan</b><span>Tema, aksen, dan bentuk</span></div></a>
+    <a class="qcard" href="/dashboard/halaman"><span class="qi" style="background:#FFF3DF;color:#B45309">${ic("eyeUp")}</span><div><b>Cek halaman publik</b><span>Lihat hasilnya langsung</span></div></a>
+  </div>
+  <div class="card">
+    <div class="cardh"><div class="t">${ic("linkUI")} Tautan terbaru</div><div class="grow"></div><a class="ob oj" href="/dashboard/tautan" title="Kelola semua">${ic("arrowR")}</a></div>
+    <div class="lst" id="homeLinks">${links.length ? recent.map((l) => linkRowMini(l)).join("") : `<div class="empty"><div class="e">${ic("linkUI")}</div><div style="font-weight:800;margin-bottom:6px">Belum ada tautan</div><div class="bt"><a class="emptya" href="/dashboard/tautan?add=1">${ic("plus")} Tambah Tautan Pertama</a></div></div>`}</div>
+  </div>
+  <div class="tipband">${ic("heart")} <span><b>Beri masukan?</b> Halaman feedback menerima saran, kritik, hingga laporan masalah.</span><a href="/feedback" class="tbtn" style="flex:0 0 auto">Feedback</a></div>`;
+}
+function viewLinks() {
+  return `
+  ${pageHead(`${ic("linkUI")} Tautanmu`, `Kelola semua tautan di halaman <b>@${esc(S.u.username)}</b>. Seret baris untuk mengurutkan.`,
+    `<a class="tbtn" href="/dashboard/grup">${ic("arrowR")} Grup & folder</a>`)}
+  <div class="card" id="addCard" hidden>
+    <div style="padding:18px">
+      <div class="frm">
+        <div class="fld full"><label>Judul</label><input id="lT" maxlength="90" placeholder="mis. Channel YouTube-ku"></div>
+        <div class="fld full"><label>Tautan (URL)</label><input id="lU" maxlength="500" placeholder="mis. https://youtube.com/@namamu">
+          <div class="hint">Media sosial terdeteksi otomatis. Awalan https:// ditambahkan bila tidak ada.</div>
+        </div>
+        <div class="fld full"><label>Grup <span class="opt">opsional</span></label><input id="lG" maxlength="40" placeholder="mis. Sosmed, Toko, Artikel" autocomplete="off">
+          <div class="hint">Tautan dengan grup sama tampil di bawah judul yang sama di halaman publikmu.</div>
+        </div>
+        <div class="fld full"><label>Ikon <span class="opt">pilih salah satu</span></label>
+          <div style="display:flex;gap:12px;align-items:center"><span class="pickprev" id="pickPrev">${gn("globe")}</span><div class="icon-grid" id="iconGrid"></div></div>
+        </div>
+        <div class="er" id="lErr"></div>
+        <div class="frow">
+          <button class="act" data-act="savelink" style="flex:1">${ic("check")} <span id="saveLbl">Simpan Tautan</span></button>
+          <button class="tbtn" data-act="canceladd">Batal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div id="listHead"><div class="t">Daftar tautan <span class="cnt" id="lCnt">0</span></div>
+      <div class="grow"></div>
+      <button class="act" data-act="addtoggle">${ic("plus")} <span id="addLbl">Tambah Tautan</span></button>
+    </div>
+    <div id="linkList"></div>
+  </div>`;
+}
+function viewGroups() {
+  const groups = [];
+  const seen = new Set();
+  S.links.forEach((l) => {
+    const g = String(l.grp || "").trim() || "Tanpa grup";
+    if (!seen.has(g)) { seen.add(g); groups.push({ name: g, items: [] }); }
+    groups[groups.length - 1].items.push(l);
+  });
+  const total = S.links.length;
+  return `
+  ${pageHead(`${ic("folderUI") || ic("linkUI")} Grup & folder`, `Tautan dikelompokkan lewat kolom <b>Grup</b> saat menambah/mengedit. Grup muncul sebagai judul seksi di halaman publikmu.`, `<a class="tbtn" href="/dashboard/tautan">${ic("plus")} Kelola tautan</a>`)}
+  <div class="gstats">${groups.length ? groups.map((g) => `<span class="gstat"><b>${esc(g.name)}</b><i>${g.items.length} tautan</i></span>`).join("") : `<span class="gstat none"><b>Belum ada grup</b></span>`} <span class="gstat muted"><b>${total}</b><i>total tautan</i></span></div>
+  ${!total ? `<div class="card"><div class="empty"><div class="e">${ic("linkUI")}</div><div style="font-weight:800;margin-bottom:6px">Belum ada tautan</div><div class="bt"><a class="emptya" href="/dashboard/tautan?add=1">${ic("plus")} Tambah Tautan Pertama</a></div></div></div>` : groups.map((g) => `
+    <div class="card grpcard">
+      <div class="cardh"><div class="t">${g.name === "Tanpa grup" ? "Tanpa grup" : esc(g.name)}</div>
+        <span class="cnt">${g.items.length}</span>
+        <div class="grow"></div>
+        ${g.name === "Tanpa grup" ? "" : `<a class="ob oj" href="/dashboard/tautan?edit=${g.items[0].id}" title="Ubah nama lewat edit tautan">${ic("pencil")}</a>`}
+      </div>
+      <div class="lst">${g.items.map((l) => linkRowMini(l, { grouped: true })).join("")}</div>
+    </div>`).join("")}
+  <div class="tipband">${ic("doc")} <span><b>Urutan grup</b> mengikuti urutan tautan pertamanya. Ganti nama grup cukup dengan mengedit salah satu tautan anggotanya.</span></div>`;
+}
+async function loadPageStats() {
+  const wrap = $("#stWrap"); if (!wrap) return;
+  try { const d = await get("stats"); wrap.innerHTML = statChartHtml(d); }
+  catch (x) { wrap.innerHTML = `<div class="sterr">${esc(x.message || "Gagal memuat statistik.")}</div>`; }
+}
+function viewStats() {
+  return `
+  ${pageHead(`${ic("chart")} Statistik`, `Kunjungan halaman publik & klik tautan — 30 hari terakhir.`,
+    `<button class="act" data-act="stats">${ic("arrowR")} Muat ulang</button>`)}
+  <div class="stat-grid big">
+    <div class="stat"><div class="v" id="stViews">${fmtNum(S.u.views)}</div><div class="k">Kunjungan</div></div>
+    <div class="stat"><div class="v" id="stClicks">${fmtNum(S.totalClicks)}</div><div class="k">Klik tautan</div></div>
+    <div class="stat"><div class="v" id="stLinks">${S.links.length}</div><div class="k">Tautan</div></div>
+    <div class="stat"><div class="v" id="stJoin">${fmtDate(S.u.created_at)}</div><div class="k">Sejak</div></div>
+  </div>
+  <div class="card"><div id="stWrap" class="stwrap"><div class="stload">Memuat grafik…</div></div></div>`;
+}
+function viewProfile() {
+  const u = S.u;
+  return `
+  ${pageHead(`${ic("users")} Profil`, `Nama, bio, dan foto tampil di halaman publik <b>@${esc(u.username)}</b>.`)}
+  <div class="card">
+    <div class="er" id="pErr"></div>
+    <div class="avatbox big">
+      <div class="big" id="avaPrev">${u.avatar ? `<img src="${esc(cloudOpt(u.avatar, 160))}" alt="">` : ic("users")}</div>
+      <div class="acts">
+        <button class="tbtn upbtn" id="pfUp">${ic("upload")} Unggah foto
+          <input id="avaFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+        </button>
+        ${u.avatar ? '<button class="tbtn" id="pfRemove2">Hapus foto</button>' : ""}
+        <span class="mini">WebP otomatis, kualitas adaptif. Maks 6 MB.</span>
+      </div>
+    </div>
+    <div class="frm">
+      <div class="fld full"><label>Nama tampilan</label><input id="pfName" maxlength="60" value="${esc(u.name)}"></div>
+      <div class="fld full"><label>Bio</label><textarea id="pfBio" maxlength="200" placeholder="Tulis bio singkat…">${esc(u.bio)}</textarea>
+        <div class="hint">Maksimal 200 karakter. Baris baru diperbolehkan.</div>
+      </div>
+      <div class="fld full"><label>Tautan foto (opsional, pengganti unggah)</label>
+        <input id="pfUrl" maxlength="300" value="${esc(u.avatar)}" placeholder="https://…">
+      </div>
+      <div class="frow"><button class="act" id="pfSave" style="flex:1">${ic("check")} Simpan profil</button></div>
+    </div>
+  </div>`;
+}
+function viewSecurity() {
+  const u = S.u, ver = !!u.email_verified, hasMail = !!u.email;
+  const mIc = window.PTIcons && window.PTIcons.brand.mail ? svgWrap(window.PTIcons.brand.mail) : ic("shield");
+  return `
+  ${pageHead(`${ic("shield")} Keamanan akun`, `Email & kata sandi untuk masuk ke <b>@${esc(u.username)}</b>.`)}
+  <div class="card" id="pvCard">
+    <div class="cardh"><div class="t">${mIc} Verifikasi email</div></div>
+    <div class="cardbody">
+      <div class="secrow">
+        <div class="seinfo"><b>Email</b><span class="sem">${hasMail ? esc(u.email) : "Belum ada email"}</span>
+          ${ver ? '<span class="pill ok">Terverifikasi</span>' : '<span class="pill no">Belum diverifikasi</span>'}</div>
+        ${!ver && hasMail ? '<button class="tbtn" id="pResend">Kirim ulang verifikasi</button>' : ""}
+      </div>
+      <p class="mini" style="line-height:1.7;margin-top:12px">${ver ? "Email ini dipakai untuk pemulihan akun dan pemberitahuan penting." : "Klik tautan pada email verifikasi untuk mengaktifkan akun sepenuhnya."}</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="cardh"><div class="t">${ic("shield")} Ganti kata sandi</div></div>
+    <div class="cardbody">
+      <form id="psForm" class="frm" autocomplete="off">
+        <div class="fld full"><label>Kata sandi lama</label>
+          <div class="pwrow"><input id="psOld" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+          <div class="hint">${u.hasPassword ? "Wajib diisi dengan kata sandi saat ini." : "Akun dari Google/Discord — kosongkan bila belum pernah membuat kata sandi."}</div>
+        </div>
+        <div class="fld full"><label>Kata sandi baru</label>
+          <div class="pwrow"><input id="psNew" type="password" autocomplete="new-password" placeholder="••••••••"></div>
+          <div class="pwchk" id="psChk"><span data-k="len">8+ karakter</span><span data-k="num">angka</span><span data-k="mix">huruf kecil & besar</span></div>
+        </div>
+        <div class="fld full"><label>Ulangi kata sandi baru</label>
+          <div class="pwrow"><input id="psNew2" type="password" autocomplete="new-password" placeholder="••••••••"></div>
+        </div>
+        <div class="er" id="psErr"></div>
+        <div class="frow"><button class="act" id="psSave" style="flex:1">${ic("shield")} Simpan kata sandi baru</button></div>
+      </form>
+    </div>
+  </div>`;
+}
+function viewShare() {
+  const u = S.u, url = loc(), enc = encodeURIComponent(url), t = encodeURIComponent("Cek halaman " + u.name + " di Pautin");
+  const cells = [
+    ["whatsapp", "WhatsApp", "#25D366", "https://wa.me/?text={{T}}%20{{U}}"],
+    ["x", "X", "#000", "https://twitter.com/intent/tweet?text={{T}}&url={{U}}"],
+    ["telegram", "Telegram", "#229ED9", "https://t.me/share/url?url={{U}}&text={{T}}"],
+    ["facebook", "Facebook", "#1877F2", "https://www.facebook.com/sharer/sharer.php?u={{U}}"],
+  ].map(([k, label, color, href]) => {
+    const pp = window.PTIcons.brand[k];
+    return `<a class="shs" href="${href.replace("{{T}}", t).replace("{{U}}", enc)}" target="_blank" rel="noopener"><span class="c" style="background:${color}">${svgWrap(pp)}</span>${label}</a>`;
+  }).join("");
+  return `
+  ${pageHead(`${ic("share")} Bagikan halamanmu`, `Sebarkan <b>@${esc(u.username)}</b> — satu alamat untuk semua tautanmu.`)}
+  <div class="card">
+    <div class="cardbody">
+      <div class="shareurl big"><input id="su" readonly value="${esc(url)}"><button data-act="copyshare">Salin</button></div>
+      <div class="sharegrid big">${cells}
+        <button class="shs" data-act="nativeshare"><span class="c" style="background:#0F5B4D">${ic("share")}</span>Lainnya</button>
+        <a class="shs" href="/dashboard/qr"><span class="c" style="background:#1B2B24">${ic("eyeUp")}</span>QR code</a>
+      </div>
+      <div class="tipband">${ic("doc")} <span>Pasang link ini di bio Instagram/TikTok, kartu nama digital, atau profil komunitas.</span></div>
+    </div>
+  </div>`;
+}
+function viewQr() {
+  return `
+  ${pageHead(`${ic("eyeUp")} QR code`, `Scan dari HP atau unduh PNG untuk kartu nama, poster, dan kemasan.`)}
+  <div class="qpage">
+    <div class="card qrcard">
+      <div id="qr"><div style="color:var(--mute);font-size:12px;padding:12px">Menyiapkan QR…</div></div>
+      <button class="act" data-act="downqr" style="width:100%;margin-top:16px">${ic("download")} Unduh PNG</button>
+      <p class="mini" style="margin-top:10px;text-align:center">Berisi link halaman <b>@${esc(S.u.username)}</b> yang selalu terbaru.</p>
+    </div>
+    <div class="card" style="flex:1">
+      <div class="cardh"><div class="t">${ic("copy")} Link halamanmu</div></div>
+      <div class="cardbody">
+        <div class="shareurl"><input id="su2" readonly value="${esc(loc())}"><button data-act="copyshare2">Salin</button></div>
+        <a class="act" href="/u/${esc(S.u.username)}" target="_blank" rel="noopener" style="display:flex;justify-content:center;margin-top:14px;text-decoration:none">${ic("external")} Buka halaman publik</a>
+      </div>
+    </div>
+  </div>`;
+}
+function viewPage() {
+  const u = S.u;
+  return `
+  ${pageHead(`${ic("eyeUp")} Halaman publikmu`, `Inilah yang dilihat orang saat membuka <b>@${esc(u.username)}</b>. Perubahan langsung tampil di sini.`,
+    `<a class="act" href="/u/${esc(u.username)}" target="_blank" rel="noopener">${ic("external")} Buka tab baru</a>`)}
+  <div class="card pvframe"><iframe src="/u/${esc(u.username)}" title="Pratinjau halaman publik" loading="eager"></iframe></div>
+  <div class="qgrid" style="margin-top:14px">
+    <a class="qcard" href="/dashboard/tautan"><span class="qi" style="background:#E4EFEA;color:var(--green)">${ic("plus")}</span><div><b>Atur isi</b><span>Tambah/edit tautan & grup</span></div></a>
+    <a class="qcard" href="/dashboard/tampilan"><span class="qi" style="background:#EFEAF9;color:#7C3AED">${gn("palette")}</span><div><b>Atur tampilan</b><span>Tema, aksen, foto, huruf</span></div></a>
+    <a class="qcard" href="/dashboard/profil"><span class="qi" style="background:#FFF3DF;color:#B45309">${ic("users")}</span><div><b>Edit profil</b><span>Nama, bio, foto</span></div></a>
+    <a class="qcard" href="/dashboard/bagikan"><span class="qi" style="background:#FBE9E4;color:var(--orange)">${ic("share")}</span><div><b>Bagikan</b><span>Salin link atau QR code</span></div></a>
+  </div>`;
+}
+function viewTheme() {
+  return `
+  ${pageHead(`${gn("palette")} Tampilan & tema`, `Semua pengaturan tampilan halaman publik <b>@${esc(S.u.username)}</b> — langsung terlihat di pratinjau.`)}
+  <div class="tset">
+    <div class="card tpre">
+      <div class="cardh"><div class="t">Pratinjau langsung</div></div>
+      <div class="pvb bigpvb" id="pvb">
+        <div class="av2" id="pvAva">${S.u.avatar ? `<img src="${esc(cloudOpt(S.u.avatar, 140))}" alt="">` : esc(initials(S.u.name))}</div>
+        <div class="nm" id="pvName">${esc(S.u.name)}</div>
+        <div class="bi" id="pvBio">${esc(S.u.bio || "Tambahkan bio singkat dari menu Edit profil.")}</div>
+        <div class="ln" id="pvRows"><i>${ic("linkUI")}</i><i>${ic("linkUI")}</i><i>${ic("linkUI")}</i></div>
+      </div>
+      <p class="mini" style="text-align:center;margin-top:12px">Persis seperti yang dilihat pengunjung halamanmu.</p>
+    </div>
+    <div class="card tctl">
+      <div class="cardh"><div class="t">Pilih tema</div></div>
+      <div class="themes" id="thRow"></div>
+      <div class="sectag">Bentuk tombol</div>
+      <div class="shape-row" id="radRow"></div>
+      <div class="sectag">Gaya daftar tautan</div>
+      <div class="shape-row" id="gridRow"></div>
+      <div class="sectag">Bentuk foto profil</div>
+      <div class="shape-row" id="avRow"></div>
+      <div class="sectag">Gaya huruf</div>
+      <div class="shape-row" id="fontRow"></div>
+      <div class="sectag">Warna aksen <span class="opt">opsional</span></div>
+      <div class="accrow pageacc" id="accRow"></div>
+      <div class="sepline"></div>
+      <button class="tbtn" data-nav="defaults" style="width:100%;justify-content:center">Kembalikan semua ke bawaan</button>
+    </div>
+  </div>`;
+}
+function viewGuide() {
+  const tips = [
+    ["linkUI", "Tambah tautan", "Buka halaman Tautan lalu klik Tambah Tautan. Tautan media sosial otomatis jadi ikon bulat.", "/dashboard/tautan?add=1"],
+    ["palette", "Atur tampilan", "Pilih tema, bentuk tombol, gaya daftar, dan warna aksen di halaman Tampilan.", "/dashboard/tampilan"],
+    ["chart", "Pantau statistik", "Halaman Statistik menampilkan grafik 30 hari serta tautan terpopuler.", "/dashboard/statistik"],
+    ["share", "Bagikan", "Salin link, bagikan ke WhatsApp/media sosial, atau unduh QR code di halaman Bagikan & QR.", "/dashboard/bagikan"],
+    ["shield", "Keamanan", "Verifikasi email dan ganti kata sandi ada di halaman Keamanan. Lupa sandi? Gunakan tautan di halaman masuk.", "/dashboard/keamanan"],
+    ["doc", "Grup & folder", "Isi kolom Grup saat menambah/mengedit tautan agar tampil berkelompok dengan judul seksi.", "/dashboard/grup"],
+    ["heart", "Feedback", "Punya saran, kritik, atau menemukan kendala? Sampaikan lewat halaman Feedback.", "/feedback"],
+  ];
+  return `
+  ${pageHead(`${ic("doc")} Panduan cepat`, `Cara memanfaatkan Pautin untuk halaman yang rapi dan mudah dibagikan.`)}
+  <div class="card"><div class="gtips page">
+    ${tips.map(([icn, h, tx, url]) => `<div class="gtip"><span class="gti">${ic(icn)}</span><div><b>${h}</b><p>${tx}</p></div><a class="ob oj" href="${url}" title="Buka">${ic("arrowR")}</a></div>`).join("")}
+  </div></div>`;
+}
+
+/* ================= binding ================= */
+let __rootBinds = false;
+function bindRootEvents() {
+  if (__rootBinds) return; __rootBinds = true;
+  window.addEventListener("popstate", () => { routeView(); window.scrollTo({ top: 0 }); });
+  document.addEventListener("click", (ev) => {
+    const m = $("#menu");
+    if (m && m.classList.contains("open") && !ev.target.closest(".menu")) m.classList.remove("open");
+  });
+  rootEl().addEventListener("click", async (ev) => {
+    const p = ev.target.closest("[data-p]");
+    if (p) { ev.preventDefault(); goPath(p.getAttribute("href")); return; }
+    const t = ev.target.closest("[data-act],[data-nav],[data-ngt]");
+    if (!t) return;
+    const act = t.dataset.act || "";
+    const closeMenu = () => { const m = $("#menu"); if (m) m.classList.remove("open"); };
+    if (act === "menu") { $("#menu").classList.toggle("open"); }
+    else if (act === "logout") { dashLogout(); }
+    else if (act === "copyurl") copyText(loc(), "Link halaman disalin.");
+    else if (act === "copylink") copyText(t.dataset.url, "URL disalin.");
+    else if (act === "copyshare" || act === "copyshare2") { const i = act === "copyshare" ? $("#su") : $("#su2"); if (i) { i.select(); copyText(i.value, "Link disalin."); } }
+    else if (act === "share" || act === "profile" || act === "stats") { closeMenu(); if (act === "share") goPath("/dashboard/bagikan"); else if (act === "profile") goPath("/dashboard/profil"); else goPath("/dashboard/statistik"); }
+    else if (act === "addtoggle") { if (S.editing) resetForm(); toggleAdd(); if (!S.showAdd) resetForm(); }
+    else if (act === "canceladd") { toggleAdd(false); resetForm(); }
+    else if (act === "savelink") saveLink();
+    else if (act === "openlink") { const l = S.links.find((x) => x.id === Number(t.dataset.id)); if (l) window.open(l.url, "_blank"); }
+    else if (act === "editlink") goPath("/dashboard/tautan?edit=" + t.dataset.id);
+    else if (act === "dellink") delLink(Number(t.dataset.id));
+    else if (act === "closenote") { const n = $("#welcome"); if (n) n.remove(); }
+    else if (act === "nativeshare") shareNative();
+    else if (act === "downqr") downQr();
+    else if (act === "closeModal") closeModal();
+    else if (t.dataset.ngt) {
+      const sec = rootEl().querySelector(`.ng[data-ng="${t.dataset.ngt}"]`);
+      if (sec) { const closed = sec.classList.toggle("closed"); t.classList.toggle("closed", closed); t.setAttribute("aria-expanded", String(!closed)); }
+    }
+    else if (t.dataset.nav) dashNav(t.dataset.nav);
+  });
+  const mv = $("#mv");
+  if (mv) mv.addEventListener("click", (ev) => { if (ev.target.id === "mv") closeModal(); });
+}
+function bindViewHooks(view) {
+  const grid = $("#iconGrid");
+  if (grid) grid.addEventListener("click", (ev) => { const b = ev.target.closest("[data-ic]"); if (b) pickIcon(b.dataset.ic); });
+  const th = $("#thRow"); if (th) th.addEventListener("click", (ev) => { const b = ev.target.closest("[data-theme]"); if (b) setTheme(b.dataset.theme); });
+  const rr = $("#radRow"); if (rr) rr.addEventListener("click", (ev) => { const b = ev.target.closest("[data-radius]"); if (b) setRadius(b.dataset.radius); });
+  [["gridRow", "grid", GRID_OPT], ["avRow", "av", AV_OPT], ["fontRow", "font", FONT_OPT]].forEach(([rid, attr, map]) => {
+    const r = $("#" + rid);
+    if (r) r.addEventListener("click", (ev) => { const b = ev.target.closest("[data-" + attr + "]"); if (b) setOpt(attr, b.dataset[attr], map); });
+  });
+  const af = $("#avaFile");
+  if (af) af.addEventListener("change", () => uploadAvatar(af));
+  const up = $("#pfUp"); if (up) up.addEventListener("click", () => $("#avaFile").click());
+
+  const sv = $("#pfSave");
+  if (sv) sv.addEventListener("click", saveProfilePage);
+  const rm2 = $("#pfRemove2");
+  if (rm2) rm2.addEventListener("click", () => { S.u.avatar = ""; const avf = $("#pfUrl"); if (avf) avf.value = ""; const ap = $("#avaPrev"); if (ap) ap.innerHTML = ic("users"); });
+  const rs = $("#pResend");
+  if (rs) rs.addEventListener("click", () => {
+    rs.disabled = true;
+    send("verify/resend", "POST", { email: S.u.email })
+      .then(() => { rs.disabled = false; toast("Tautan verifikasi terkirim ulang."); })
+      .catch((e) => { rs.disabled = false; toast(e.message, 1); });
+  });
+  const pn = $("#psNew");
+  if (pn) pn.addEventListener("input", () => {
+    const v = pn.value, has = { len: v.length >= 8, num: /\d/.test(v), mix: /[a-z]/.test(v) && /[A-Z]/.test(v) };
+    ["len", "num", "mix"].forEach((k) => { const c = $("#psChk") && $("#psChk").querySelector(`[data-k="${k}"]`); if (c) c.classList.toggle("on", !!has[k]); });
+  });
+  const ps = $("#psSave");
+  if (ps) ps.addEventListener("click", async () => {
+    const err = $("#psErr"); if (err) err.classList.remove("show");
+    const p1 = $("#psNew").value, p2 = $("#psNew2").value;
+    if (p1.length < 8) return pageErr("psErr", "Kata sandi baru minimal 8 karakter.");
+    if (!/\d/.test(p1)) return pageErr("psErr", "Kata sandi baru harus mengandung angka.");
+    if (!/[a-z]/.test(p1) || !/[A-Z]/.test(p1)) return pageErr("psErr", "Kata sandi baru harus punya huruf kecil dan besar.");
+    if (p1 !== p2) return pageErr("psErr", "Ulangi kata sandi tidak sama.");
+    ps.disabled = true;
+    try {
+      await send("password", "POST", { old: $("#psOld").value, password: p1 });
+      $("#psOld").value = $("#psNew").value = $("#psNew2").value = "";
+      S.u.hasPassword = true;
+      toast("Kata sandi baru disimpan.");
+    } catch (x) { ps.disabled = false; pageErr("psErr", x.message); }
+  });
+  if (view === "home") updateStats();
+}
+function pageErr(id, m) { const e = $("#" + id); if (!e) return; e.textContent = m; e.classList.add("show"); }
+async function saveProfilePage() {
+  const name = $("#pfName").value.trim();
+  const bio = $("#pfBio").value.trim().slice(0, 200);
+  const av = ($("#pfUrl").value || "").trim();
+  const err = $("#pErr"); if (err) err.classList.remove("show");
+  if (!name) return pageErr("pErr", "Nama tampilan wajib diisi.");
+  try {
+    await send("profile", "PUT", { name, bio, avatar: av });
+    S.u.name = name; S.u.bio = bio; S.u.avatar = av;
+    paintAvatar();
+    const ap = $("#avaPrev");
+    if (ap) ap.innerHTML = S.u.avatar ? `<img src="${esc(cloudOpt(S.u.avatar, 160))}" alt="">` : ic("users");
+    toast("Profil diperbarui.");
+  } catch (e) { pageErr("pErr", e.message); }
+}
+
 
 function paintAvatar() {
   const u = S.u;
@@ -543,7 +918,7 @@ function renderAccRow() {
       ? `<button type="button" class="acc" data-hex="${hex}" title="Aksen ${hex}" style="background:${hex}"></button>`
       : `<button type="button" class="acc def${cur ? "" : " on"}" data-hex="" title="Pakai warna bawaan tema">A</button>`
   ).join("") +
-    `<label class="acc cust" title="Pilih warna sendiri"><input type="color" id="accPick" value="${/^#[0-9a-f]{6}$/.test(cur) ? cur : "#E4572E"}">${ic("palette")}</label>`;
+    `<label class="acc cust" title="Pilih warna sendiri"><input type="color" id="accPick" value="${/^#[0-9a-f]{6}$/.test(cur) ? cur : "#E4572E"}">${gn("palette")}</label>`;
   r.addEventListener("click", (ev) => {
     const b = ev.target.closest("[data-hex]");
     if (b) { setAccent(b.dataset.hex || ""); paintAccSel(); }
@@ -676,7 +1051,7 @@ function renderLinks() {
   const wrap = $("#linkList"); if (!wrap) return;
   $("#lCnt").textContent = S.links.length;
   $("#nLinkCnt") && ($("#nLinkCnt").textContent = S.links.length);
-  $("#listSub").textContent = S.links.length ? `total ${S.links.length} tautan` : "";
+  const ls = $("#listSub"); if (ls) ls.textContent = S.links.length ? `total ${S.links.length} tautan` : "";
   if (!S.links.length) {
     wrap.innerHTML = `<div class="empty"><div class="e">${ic("linkUI")}</div>
       <div style="font-weight:800;margin-bottom:6px">Belum ada tautan</div>
@@ -782,185 +1157,15 @@ async function resetLook() {
 function dashNav(k) {
   const u = S.u;
   switch (k) {
-    case "home": window.scrollTo({ top: 0, behavior: "smooth" }); break;
-    case "refresh": persistLinks().then(() => toast("Data diperbarui.")); break;
-    case "stats": openStats(); break;
-    case "links": scrollToEl($("#linkList")); break;
-    case "add": toggleAdd(true); setTimeout(() => scrollToEl($("#addCard")), 80); break;
-    case "groups": scrollToEl($("#linkList")); toast("Kelompok tautan diatur lewat kolom \"Grup\" saat menambah atau mengedit tautan."); break;
-    case "profile": openProfile(); break;
-    case "photo": openProfile(); break;
-    case "security": openSecurity("email"); break;
-    case "pass": openSecurity("pass"); break;
-    case "page": window.open("/u/" + u.username, "_blank"); break;
+    case "refresh": persistLinks().then(() => { routeView(); toast("Data diperbarui."); }); break;
     case "copyurl": copyText(loc(), "Link halaman disalin."); break;
     case "copyuser": copyText("@" + u.username, "Username disalin."); break;
     case "logout": dashLogout(); break;
-    case "share": openShare(); break;
-    case "qr": openShare(); setTimeout(() => { const mv = $("#mv"); if (!mv) return; const b = mv.querySelector(".box"), q = mv.querySelector(".qrow"); if (b && q) b.scrollTo({ top: q.offsetTop - 24, behavior: "smooth" }); }, 80); break;
-    case "theme": scrollToEl($("#cardTheme")); break;
-    case "picktheme": scrollToEl($("#thRow")); break;
-    case "radius": scrollToEl($("#radRow")); break;
-    case "grid": scrollToEl($("#gridRow")); break;
-    case "av": scrollToEl($("#avRow")); break;
-    case "font": scrollToEl($("#fontRow")); break;
-    case "accent": scrollToEl($("#accRow")); break;
     case "defaults": resetLook(); break;
-    case "guide": openGuide(); break;
     case "navtoggle": { const c = $("#navCard"); if (c) { c.hidden = !c.hidden; toast(c.hidden ? "Panel menu disembunyikan." : "Panel menu ditampilkan kembali."); } } break;
   }
 }
 
-/* ================= modal keamanan ================= */
-function openSecurity(part) {
-  const u = S.u, mv = $("#mv"); if (!mv) return;
-  const ver = !!u.email_verified, hasMail = !!u.email;
-  mv.className = "mv show";
-  mv.innerHTML = `
-  <div class="box">
-    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
-    <h3>${ic("shield")} Keamanan akun</h3>
-    <div class="sub">Data masuk akun <b>@${esc(u.username)}</b>.</div>
-    <div class="er" id="seErr"></div>
-    <div class="secrow">
-      <div class="seinfo">
-        <b>Email</b>
-        <span class="sem">${hasMail ? esc(u.email) : "Belum ada email"}</span>
-        ${ver ? '<span class="pill ok">Terverifikasi</span>' : '<span class="pill no">Belum diverifikasi</span>'}
-      </div>
-      ${!ver && hasMail ? '<button class="tbtn" id="seResend">Kirim ulang verifikasi</button>' : ""}
-    </div>
-    <div class="sepline"></div>
-    <form id="seForm" class="frm" autocomplete="off">
-      <div class="fld full"><label>Kata sandi lama</label>
-        <div class="pwrow"><input id="seOld" type="password" autocomplete="current-password" placeholder="••••••••"></div>
-        <div class="hint">${u.hasPassword ? "Wajib diisi dengan kata sandi saat ini." : "Akun dari Google/Discord — kosongkan bila belum pernah membuat kata sandi."}</div>
-      </div>
-      <div class="fld full"><label>Kata sandi baru</label>
-        <div class="pwrow"><input id="seNew" type="password" autocomplete="new-password" placeholder="••••••••"></div>
-        <div class="pwchk" id="seChk"><span data-k="len">8+ karakter</span><span data-k="num">angka</span><span data-k="mix">huruf kecil & besar</span></div>
-      </div>
-      <div class="fld full"><label>Ulangi kata sandi baru</label>
-        <div class="pwrow"><input id="seNew2" type="password" autocomplete="new-password" placeholder="••••••••"></div>
-      </div>
-      <div class="frow">
-        <button class="act" type="submit" style="flex:1">${ic("shield")} Simpan kata sandi baru</button>
-        <button class="tbtn" type="button" data-act="closeModal">Batal</button>
-      </div>
-    </form>
-  </div>`;
-  const rs = $("#seResend");
-  if (rs) rs.addEventListener("click", () => {
-    rs.disabled = true;
-    send("verify/resend", "POST", { email: u.email })
-      .then(() => { toast("Tautan verifikasi terkirim ulang."); })
-      .catch((e) => { rs.disabled = false; seErr(e.message); });
-  });
-  const chk = () => {
-    const v = $("#seNew").value, has = { len: v.length >= 8, num: /\d/.test(v), mix: /[a-z]/.test(v) && /[A-Z]/.test(v) };
-    ["len", "num", "mix"].forEach((k2) => { const c = $("#seChk") && $("#seChk").querySelector(`[data-k="${k2}"]`); if (c) c.classList.toggle("on", !!has[k2]); });
-  };
-  $("#seNew").addEventListener("input", chk);
-  $("#seForm").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const err = $("#seErr"); if (err) err.classList.remove("show");
-    const p1 = $("#seNew").value, p2 = $("#seNew2").value;
-    if (p1.length < 8) return seErr("Kata sandi baru minimal 8 karakter.");
-    if (!/\d/.test(p1)) return seErr("Kata sandi baru harus mengandung angka.");
-    if (!/[a-z]/.test(p1) || !/[A-Z]/.test(p1)) return seErr("Kata sandi baru harus punya huruf kecil dan besar.");
-    if (p1 !== p2) return seErr("Ulangi kata sandi tidak sama.");
-    const btn = $("#seForm").querySelector(".act"); btn.disabled = true;
-    try {
-      await send("password", "POST", { old: $("#seOld").value, password: p1 });
-      toast("Kata sandi baru disimpan.");
-      closeModal();
-    } catch (x) { btn.disabled = false; seErr(x.message); }
-  });
-}
-function seErr(m) { const e = $("#seErr"); if (!e) return; e.textContent = m; e.classList.add("show"); }
-
-/* ================= modal panduan ================= */
-function openGuide() {
-  const mv = $("#mv"); if (!mv) return;
-  const tips = [
-    ["linkUI", "Tambah tautan", "Klik \"Tambah Tautan\" lalu isi judul, URL, dan grup. Tautan media sosial otomatis jadi ikon bulat."],
-    ["palette", "Atur tampilan", "Pilih tema, bentuk tombol, gaya daftar, dan warna aksen — semua langsung terlihat di pratinjau."],
-    ["chart", "Pantau statistik", "Menu \"Statistik 30 hari\" menampilkan grafik kunjungan & klik serta tautan terpopuler."],
-    ["copy", "Bagikan", "Salin link halaman, bagikan ke WhatsApp/media sosial, atau unduh QR code untuk kartu nama."],
-    ["shield", "Keamanan", "Verifikasi email & ganti kata sandi tersedia di menu \"Akun\". Lupa sandi bisa direset dari halaman masuk."],
-    ["groups", "Grup", "Isi kolom \"Grup\" agar tautan tampil berkelompok dengan judul seksi di halaman publikmu."],
-  ];
-  mv.className = "mv show";
-  mv.innerHTML = `
-  <div class="box wide">
-    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
-    <h3>${ic("doc")} Panduan cepat</h3>
-    <div class="sub">Enam hal yang paling sering dicari di dashboard.</div>
-    <div class="gtips">
-      ${tips.map(([icn, h, tx]) => `<div class="gtip"><span class="gti">${ic(icn)}</span><div><b>${h}</b><p>${tx}</p></div></div>`).join("")}
-    </div>
-    <div class="frow" style="margin-top:6px">
-      <a class="act" href="/about" style="flex:1;text-align:center;text-decoration:none">Tentang Pautin</a>
-      <button class="tbtn" data-act="closeModal">Tutup</button>
-    </div>
-  </div>`;
-}
-
-/* ================= aksi global dashboard ================= */
-function bindDashEvents() {
-  rootEl().addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-act],[data-nav],[data-ngt]");
-    if (!t) return;
-    const act = t.dataset.act || "";
-    const closeMenu = () => { const m = $("#menu"); if (m) m.classList.remove("open"); };
-    if (act === "menu") { $("#menu").classList.toggle("open"); }
-    else if (act === "logout") {
-      window.__ptok = null;
-      try { await send("logout", "POST"); } catch {}
-      await ensureCfg(); renderAuth("login");
-    }
-    else if (act === "view") window.open("/u/" + S.u.username, "_blank");
-    else if (act === "copyurl") copyText(loc(), "Link halaman disalin.");
-    else if (act === "copylink") copyText(t.dataset.url, "URL disalin.");
-    else if (act === "share") { closeMenu(); openShare(); }
-    else if (act === "profile") { closeMenu(); openProfile(); }
-    else if (act === "stats") { closeMenu(); openStats(); }
-    else if (act === "addtoggle") { if (S.editing) { resetForm(); } toggleAdd(); if (!S.showAdd) resetForm(); }
-    else if (act === "canceladd") { toggleAdd(false); resetForm(); }
-    else if (act === "savelink") saveLink();
-    else if (act === "openlink") { const l = S.links.find((x) => x.id === Number(t.dataset.id)); if (l) window.open(l.url, "_blank"); }
-    else if (act === "editlink") openEdit(Number(t.dataset.id));
-    else if (act === "dellink") delLink(Number(t.dataset.id));
-    else if (act === "closenote") { const n = $("#welcome"); if (n) n.remove(); }
-    else if (act === "icpick") pickIcon(t.dataset.ic);
-    else if (act === "theme") setTheme(t.dataset.theme);
-    else if (act === "radius") setRadius(t.dataset.radius);
-    else if (act === "copyshare") { const i = $("#su"); if (i) { i.select(); copyText(i.value, "Link disalin."); } }
-    else if (act === "nativeshare") shareNative();
-    else if (act === "downqr") downQr();
-    else if (act === "closeModal") closeModal();
-    else if (act === "saveprofile") saveProfile();
-    else if (act === "ava") $("#avaFile").click();
-    else if (t.dataset.ngt) {
-      const h = t, sec = rootEl().querySelector(`.ng[data-ng="${h.dataset.ngt}"]`);
-      if (sec) { const closed = sec.classList.toggle("closed"); h.classList.toggle("closed", closed); h.setAttribute("aria-expanded", String(!closed)); }
-    }
-    else if (t.dataset.nav) dashNav(t.dataset.nav);
-  });
-  // klik area gelap menutup modal
-  $("#mv") && ($("#mv").addEventListener("click", (ev) => { if (ev.target.id === "mv") closeModal(); }));
-  // delegasi khusus untuk ikon di grid (di-render dinamis via data-act di atas belum mencakup)
-  const grid = $("#iconGrid");
-  if (grid) grid.addEventListener("click", (ev) => { const b = ev.target.closest("[data-ic]"); if (b) pickIcon(b.dataset.ic); });
-  const th = $("#thRow"); if (th) th.addEventListener("click", (ev) => { const b = ev.target.closest("[data-theme]"); if (b) setTheme(b.dataset.theme); });
-  const rr = $("#radRow"); if (rr) rr.addEventListener("click", (ev) => { const b = ev.target.closest("[data-radius]"); if (b) setRadius(b.dataset.radius); });
-  [["gridRow", "grid", GRID_OPT], ["avRow", "av", AV_OPT], ["fontRow", "font", FONT_OPT]].forEach(([rid, attr, map]) => {
-    const r = $("#" + rid);
-    if (r) r.addEventListener("click", (ev) => { const b = ev.target.closest("[data-" + attr + "]"); if (b) setOpt(attr, b.dataset[attr], map); });
-  });
-  const af = $("#avaFile");
-  if (af) af.addEventListener("change", () => uploadAvatar(af));
-}
 function copyText(txt, msg) {
   (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject())
     .then(() => toast(msg))
@@ -977,24 +1182,6 @@ async function shareNative() {
 }
 
 /* ================= grafik statistik ================= */
-async function openStats() {
-  const mv = $("#mv"); if (!mv) return;
-  mv.className = "mv show";
-  mv.innerHTML = `
-  <div class="box wide">
-    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
-    <h3>${ic("chart")} Statistik 30 hari</h3>
-    <div class="sub">Kunjungan halaman publik & klik tautanmu, 30 hari terakhir.</div>
-    <div id="stWrap" class="stwrap"><div class="stload">Memuat…</div></div>
-  </div>`;
-  try {
-    const d = await get("stats");
-    const wrap = $("#stWrap"); if (!wrap) return;
-    wrap.innerHTML = statChartHtml(d);
-  } catch (x) {
-    const w = $("#stWrap"); if (w) w.innerHTML = `<div class="sterr">${esc(x.message || "Gagal memuat statistik.")}</div>`;
-  }
-}
 function statChartHtml(d) {
   const days = d.days || [];
   const max = Math.max(1, ...days.map((x) => Math.max(x.views, x.clicks)));
@@ -1037,52 +1224,7 @@ function dayLabel(mmdd) {
 }
 function dayShort(mmdd) { return String(parseInt(mmdd.slice(3), 10)); }
 
-/* ================= modal profil ================= */
-function openProfile() {
-  const u = S.u;
-  const mv = $("#mv");
-  mv.className = "mv show";
-  mv.innerHTML = `
-  <div class="box wide">
-    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
-    <h3>${ic("user")} Edit profil</h3>
-    <div class="sub">Nama, bio, dan foto tampil di halaman publikmu: <b>/${esc(u.username)}</b></div>
-    <div class="er" id="pErr"></div>
-    <div class="avatbox">
-      <div class="big" id="avaPrev">${u.avatar ? `<img src="${esc(cloudOpt(u.avatar, 160))}" alt="">` : ic("user")}</div>
-      <div class="acts">
-        <button class="tbtn upbtn" data-act="ava">${ic("upload")} Unggah foto
-          <input id="avaFile" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
-        </button>
-        ${u.avatar ? '<button class="tbtn" data-act="removeava">Hapus foto</button>' : ""}
-        <span class="mini">WebP otomatis, kualitas adaptif. Maks 6 MB.</span>
-      </div>
-    </div>
-    <div class="frm">
-      <div class="fld full"><label>Nama tampilan</label><input id="pfName" maxlength="60" value="${esc(u.name)}"></div>
-      <div class="fld full"><label>Bio</label><textarea id="pfBio" maxlength="200" placeholder="Tulis bio singkat…">${esc(u.bio)}</textarea>
-        <div class="hint">Maksimal 200 karakter. Baris baru diperbolehkan.</div>
-      </div>
-      <div class="fld full"><label>Tautan foto (opsional, pengganti unggah)</label>
-        <input id="pfUrl" maxlength="300" value="${esc(u.avatar)}" placeholder="https://…">
-        <div class="hint">Diunggah ke Cloudinary dan dioptimasi otomatis bila memakai tombol unggah.</div>
-      </div>
-      <div class="frow">
-        <button class="act" data-act="saveprofile" style="flex:1">${ic("check")} Simpan profil</button>
-        <button class="tbtn" data-act="closeModal">Batal</button>
-      </div>
-    </div>
-  </div>`;
-  // ulang bind aksi khusus setelah modal dibuka
-  mv.querySelector('[data-act="ava"]') && mv.querySelector('[data-act="ava"]').addEventListener("click", () => $("#avaFile").click());
-  const af = $("#avaFile");
-  if (af) af.addEventListener("change", () => uploadAvatar(af));
-  mv.querySelector('[data-act="removeava"]') && mv.querySelector('[data-act="removeava"]').addEventListener("click", () => {
-    S.u.avatar = ""; $("#pfUrl").value = ""; paintAvatar();
-  });
-  // tombol umum modal (closeModal/saveprofile) sudah didelegasikan global
-}
-let avaUploading = false;
+/* ================= foto profil ================= */
 async function uploadAvatar(input) {
   const f = input.files && input.files[0];
   if (!f) return;
@@ -1107,58 +1249,7 @@ async function uploadAvatar(input) {
   } catch (e) { toast(e.message, 1); paintAvatar(); }
   avaUploading = false; input.value = "";
 }
-async function saveProfile() {
-  const name = $("#pfName").value.trim();
-  const bio = $("#pfBio").value.trim().slice(0, 200);
-  const av = ($("#pfUrl").value || "").trim();
-  const err = $("#pErr"); if (err) err.classList.remove("show");
-  if (!name) { if (err) { err.textContent = "Nama tampilan wajib diisi."; err.classList.add("show"); } return; }
-  try {
-    await send("profile", "PUT", { name, bio, avatar: av });
-    S.u.name = name; S.u.bio = bio; S.u.avatar = av;
-    paintAvatar();
-    closeModal();
-    toast("Profil diperbarui.");
-  } catch (e) { if (err) { err.textContent = e.message; err.classList.add("show"); } }
-}
-
-/* ================= modal bagikan ================= */
-function openShare() {
-  const u = S.u, url = loc();
-  const enc = encodeURIComponent(url);
-  const t = encodeURIComponent("Cek halaman " + u.name + " di Pautin");
-  const shareUrl = (base) => base.replace("{{U}}", enc).replace("{{T}}", t);
-  const mv = $("#mv");
-  mv.className = "mv show";
-  let cells = [
-    ["whatsapp", "WhatsApp", "#25D366", "https://wa.me/?text={{T}}%20{{U}}"],
-    ["x", "X", "#000", "https://twitter.com/intent/tweet?text={{T}}&url={{U}}"],
-    ["telegram", "Telegram", "#229ED9", "https://t.me/share/url?url={{U}}&text={{T}}"],
-    ["facebook", "Facebook", "#1877F2", "https://www.facebook.com/sharer/sharer.php?u={{U}}"],
-  ].map(([k, label, color, href]) => {
-    const p = window.PTIcons.brand[k];
-    return `<a class="shs" href="${href.replace("{{T}}", t).replace("{{U}}", enc)}" target="_blank" rel="noopener"><span class="c" style="background:${color}">${svgWrap(p)}</span>${label}</a>`;
-  }).join("");
-  cells += `<button class="shs" data-act="nativeshare"><span class="c" style="background:#0F5B4D">${ic("share")}</span>Lainnya</button>`;
-  cells += `<button class="shs" data-act="copyshare"><span class="c" style="background:#E4572E">${ic("copy")}</span>Salin</button>`;
-  mv.innerHTML = `
-  <div class="box">
-    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
-    <h3>${ic("share")} Bagikan halamanmu</h3>
-    <div class="sub">Sebarkan <b>@${esc(u.username)}</b> — satu alamat untuk semua tautanmu.</div>
-    <div class="shareurl"><input id="su" readonly value="${esc(url)}"><button data-act="copyshare">Salin</button></div>
-    <div class="sharegrid">${cells}</div>
-    <div class="qrow" style="margin-top:18px">
-      <div class="qleft">
-        <div class="sectag" style="margin-bottom:8px">QR code</div>
-        <p class="mini">Bisa discan dari HP dan diunduh untuk kartu nama atau poster.</p>
-        <button class="tbtn" data-act="downqr" style="margin-top:10px">${ic("download")} Unduh PNG</button>
-      </div>
-      <div id="qr"><div style="color:var(--mute);font-size:12px;padding:12px">Menyiapkan QR…</div></div>
-    </div>
-  </div>`;
-  makeQr($("#qr"), url);
-}
+/* ================= modal & QR ================= */
 function closeModal() { const mv = $("#mv"); mv.className = "mv"; mv.innerHTML = ""; }
 function makeQr(el, text) {
   const img = new Image();
