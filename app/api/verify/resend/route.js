@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { findUserByEmail, setVerifyToken, maskEmail } from "@/lib/auth";
-import { verifyTurnstile } from "@/lib/turnstile";
 import { hitLimit, clientIp } from "@/lib/ratelimit";
 import { resendConfigured, sendMail, verifyEmailHtml, verifyEmailText } from "@/lib/email";
 import { siteBaseUrl } from "@/lib/auth";
@@ -21,8 +20,6 @@ export async function POST(req) {
 
   if (!(await hitLimit(`resend:${ip}`, 10, 300)).ok)
     return NextResponse.json({ error: "Terlalu sering. Coba lagi nanti." }, { status: 429 });
-  if (!(await verifyTurnstile(d.turnstileToken, ip)))
-    return NextResponse.json({ error: "Verifikasi keamanan gagal. Muat ulang halaman dan coba lagi." }, { status: 400 });
 
   const u = await findUserByEmail(email);
   if (!u) return NextResponse.json({ error: "Akun dengan email itu tidak ditemukan." }, { status: 404 });

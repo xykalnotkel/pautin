@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createUser, setVerifyToken } from "@/lib/auth";
 import { USERNAME_RE, RESERVED, db } from "@/lib/db";
-import { verifyTurnstile } from "@/lib/turnstile";
 import { hitLimit, clientIp } from "@/lib/ratelimit";
 import { siteBaseUrl } from "@/lib/auth";
 import { resendConfigured, sendMail, verifyEmailHtml, verifyEmailText } from "@/lib/email";
@@ -26,8 +25,6 @@ export async function POST(req) {
   if (!(await hitLimit(`register:${ip}`, 8, 600)).ok)
     return NextResponse.json({ error: "Terlalu banyak pendaftaran dari perangkat ini. Tunggu sebentar." }, { status: 429 });
 
-  if (!(await verifyTurnstile(d.turnstileToken, ip)))
-    return NextResponse.json({ error: "Verifikasi keamanan gagal. Muat ulang halaman dan coba lagi." }, { status: 400 });
 
   if (!USERNAME_RE.test(username))
     return NextResponse.json({ error: "Username 3–20 huruf/angka kecil (a–z, 0–9), tanpa spasi." }, { status: 400 });

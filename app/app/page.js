@@ -15,7 +15,7 @@ export default function DashboardPage() {
       return el;
     };
     // naikkan V tiap rilis aset berubah agar cache browser/CF tidak menyajikan versi lama
-    const V = "20260907a";
+    const V = "20260907b";
     add("link", { rel: "stylesheet", href: `/a/app.css?v=${V}` });
     add("script", { src: `/a/icons.js?v=${V}` });
     add("script", { src: `/a/app.js?v=${V}` }, () => window.__pautinBoot && window.__pautinBoot());

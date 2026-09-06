@@ -57,36 +57,14 @@ function cloudOpt(url, w = 300, fill = true) {
   return url.replace("/image/upload/", `/image/upload/${t},q_auto:good,f_webp/`);
 }
 
-/* ================= konfig + turnstile ================= */
+/* ================= konfig ================= */
 let __cfgP = null;
 function ensureCfg() {
   if (window.__cfg) return Promise.resolve(window.__cfg);
   if (__cfgP) return __cfgP;
-  __cfgP = get("config").then((c) => (window.__cfg = c)).catch(() => (window.__cfg = { turnstileSiteKey: null }));
+  __cfgP = get("config").then((c) => (window.__cfg = c)).catch(() => (window.__cfg = {}));
   return __cfgP;
 }
-function mountTurnstile() {
-  const key = window.__cfg && window.__cfg.turnstileSiteKey;
-  const wrap = $("#tstWrap");
-  if (!key || !wrap) return;
-  wrap.innerHTML = "";
-  const render = () => {
-    if (!window.turnstile || !$("#tstWrap")) return;
-    try { window.turnstile.render($("#tstWrap"), { sitekey: key, callback: (t) => { window.__tsToken = t; }, "expired-callback": () => { window.__tsToken = null; }, "error-callback": () => { window.__tsToken = null; } }); } catch {}
-  };
-  if (window.turnstile) render();
-  else {
-    window.__tsOnload = render;
-    if (!document.getElementById("ts-script")) {
-      const s = document.createElement("script");
-      s.id = "ts-script";
-      s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__tsOnload";
-      s.async = true; s.defer = true;
-      document.body.appendChild(s);
-    }
-  }
-}
-function tsToken() { return window.__tsToken || ""; }
 
 /* ================= boot ================= */
 window.__pautinBoot = async function () {
@@ -155,11 +133,9 @@ function renderAuth(mode) {
       </div>` : ""}
     </div>
     <button class="act abtn" id="aGo" data-act="submit">${m === "signup" ? "Daftar dan kirim verifikasi" : "Masuk"} ${ic("arrowR")}</button>
-    <div id="tstWrap" style="margin-top:12px;display:flex;justify-content:center"></div>
     <p class="asub">${m === "signup" ? "Sudah punya akun? " : "Belum punya akun? "}<a href="#" data-act="swap">${m === "signup" ? "Masuk" : "Daftar gratis"}</a></p>
   </div></div>`;
   bindAuthActions(m);
-  mountTurnstile();
   if (new URLSearchParams(location.search).get("authfail")) authErr("Masuk dengan akun sosial gagal. Coba lagi atau gunakan username/email.");
 }
 
@@ -175,7 +151,6 @@ function renderMailCheck(email, devLink) {
       <button class="act" id="aRs" data-act="resend">${ic("arrowR")} Kirim ulang tautan</button>
       <button class="tbtn" data-act="swap">Kembali ke masuk</button>
     </div>
-    <div id="tstWrap" style="margin-top:10px;display:flex;justify-content:center"></div>
     <p class="asub" style="margin-top:14px">Tidak sampai? Cek folder spam, atau tunggu 60 detik sebelum kirim ulang.</p>
   </div></div>`;
   window.__pendEmail = email;
@@ -185,11 +160,10 @@ function renderMailCheck(email, devLink) {
     const btn = $("#aRs");
     if (!btn || btn.disabled) return;
     btn.disabled = true;
-    send("verify/resend", "POST", { email: window.__pendEmail || "", turnstileToken: tsToken() })
+    send("verify/resend", "POST", { email: window.__pendEmail || "" })
       .then(() => { btn.disabled = false; toast("Tautan verifikasi terkirim ulang."); })
       .catch((e) => { btn.disabled = false; authErr(e.message); });
   };
-  mountTurnstile();
 }
 
 const authErr = (m) => { const e = $("#aerr"); if (!e) return; e.textContent = m; e.classList.add("show"); };
@@ -251,9 +225,6 @@ function bindAuthActions(mode) {
     const go = $("#aGo");
     if (!go || go.disabled) return;
     const err = $("#aerr"); if (err) err.classList.remove("show");
-    if (window.__cfg && window.__cfg.turnstileSiteKey && !window.__tsToken) {
-      authErr("Selesaikan verifikasi keamanan di bawah dulu ya."); return;
-    }
     const u = aU.value.trim().toLowerCase(), p = aP.value;
     go.disabled = true;
     const done = (m) => { go.disabled = false; authErr(m); };
@@ -266,7 +237,7 @@ function bindAuthActions(mode) {
       if (p.length < 8) return done("Kata sandi minimal 8 karakter.");
       if (!/\d/.test(p)) return done("Kata sandi harus mengandung minimal satu angka.");
       if (p !== p2v) return done("Ulangi kata sandi tidak sama dengan kata sandi.");
-      send("register", "POST", { username: u, name: n, email: em, password: p, turnstileToken: tsToken() })
+      send("register", "POST", { username: u, name: n, email: em, password: p })
         .then((d) => {
           if (!d.ok) return done(d.error || "Gagal mendaftar.");
           renderMailCheck(d.email || em, d.devLink);
@@ -274,7 +245,7 @@ function bindAuthActions(mode) {
         })
         .catch((e) => done(e.message));
     } else {
-      send("login", "POST", { username: u, password: p, turnstileToken: tsToken() })
+      send("login", "POST", { username: u, password: p })
         .then(async (d) => { window.__ptok = d.token; try { await window.__pautinEnter(false); } catch { location.reload(); } })
         .catch((e) => {
           if (e.status === 403 && e.data && e.data.code === "unverified") renderMailCheck(e.data.email || u, null);
@@ -325,6 +296,12 @@ function renderDashboard(isNew) {
         <div class="themes" id="thRow"></div>
         <div class="sectag" style="padding:0 18px">Bentuk tombol</div>
         <div class="shape-row" id="radRow"></div>
+        <div class="sectag" style="padding:16px 18px 8px">Gaya daftar tautan</div>
+        <div class="shape-row" id="gridRow"></div>
+        <div class="sectag" style="padding:16px 18px 8px">Bentuk foto profil</div>
+        <div class="shape-row" id="avRow"></div>
+        <div class="sectag" style="padding:16px 18px 8px">Gaya huruf</div>
+        <div class="shape-row" id="fontRow"></div>
       </div>
 
       <div class="card">
@@ -419,6 +396,19 @@ const THEME_INFO = {
 };
 const RADII_MAP = { full: "Lingkaran", soft: "Membulat", sharp: "Persegi" };
 const R_SYM = { full: "●", soft: "◖◗", sharp: "▢" };
+const GRID_OPT = { list: "Satu kolom", grid2: "Dua kolom" };
+const AV_OPT = { circle: "Bulat", round: "Lembut", square: "Kotak" };
+const FONT_OPT = { sans: "Sans", serif: "Serif", mono: "Mono" };
+function segInto(row, map, cur, attr) {
+  if (!row) return;
+  row.innerHTML = "";
+  Object.keys(map).forEach((k) => {
+    const b = document.createElement("button");
+    b.className = "sh" + (k === cur ? " on" : "");
+    b.dataset[attr] = k; b.textContent = map[k]; b.title = map[k];
+    row.appendChild(b);
+  });
+}
 
 function renderThemes() {
   const th = $("#thRow"); th.innerHTML = "";
@@ -437,6 +427,9 @@ function renderThemes() {
     b.dataset.radius = k; b.textContent = R_SYM[k]; b.title = RADII_MAP[k];
     rr.appendChild(b);
   });
+  segInto($("#gridRow"), GRID_OPT, S.u.grid || "list", "grid");
+  segInto($("#avRow"), AV_OPT, S.u.av || "circle", "av");
+  segInto($("#fontRow"), FONT_OPT, S.u.font || "sans", "font");
   paintPreview();
 }
 function paintPreview() {
@@ -448,9 +441,26 @@ function paintPreview() {
   pvb.style.setProperty("--pb", pbtn);
   pvb.style.color = fg;
   $$("#pvName,#pvBio", pvb).forEach((el) => { el.style.color = fg; });
+  const pva = $("#pvAva");
+  if (pva) pva.style.borderRadius = { circle: "50%", round: "28%", square: "14px" }[S.u.av] || "50%";
+  const fam = S.u.font === "serif" ? "Georgia,'Times New Roman',serif" : S.u.font === "mono" ? "ui-monospace,Menlo,Consolas,monospace" : "";
+  const pn = $("#pvName"), pb = $("#pvBio");
+  if (pn) pn.style.fontFamily = fam || ""; if (pb) pb.style.fontFamily = fam || "";
+  const rows = $("#pvRows");
+  if (rows) {
+    if (S.u.grid === "grid2") { rows.style.display = "grid"; rows.style.gridTemplateColumns = "1fr 1fr"; rows.style.gap = "7px"; }
+    else { rows.style.display = ""; rows.style.gridTemplateColumns = ""; rows.style.gap = ""; }
+  }
 }
 async function setTheme(k) { S.u.theme = k; paintPreview(); $$("#thRow .th").forEach((x) => x.classList.toggle("on", x.dataset.theme === k)); send("settings", "PUT", { theme: k }).then(() => toast("Tema: " + THEME_INFO[k].t)).catch((e) => toast(e.message, 1)); }
 async function setRadius(k) { S.u.radius = k; $$("#radRow .sh").forEach((x) => x.classList.toggle("on", x.dataset.radius === k)); send("settings", "PUT", { radius: k }).then(() => toast("Bentuk tombol: " + RADII_MAP[k])).catch((e) => toast(e.message, 1)); }
+const SEG_LBL = { grid: "Gaya daftar", av: "Bentuk foto", font: "Gaya huruf" };
+async function setOpt(attr, k, map) {
+  S.u[attr] = k;
+  paintPreview();
+  $$("#" + attr + "Row .sh").forEach((x) => x.classList.toggle("on", x.dataset[attr] === k));
+  send("settings", "PUT", { [attr]: k }).then(() => toast(SEG_LBL[attr] + ": " + map[k])).catch((e) => toast(e.message, 1));
+}
 
 /* ================= ikon picker ================= */
 function renderIconPicker() {
@@ -660,6 +670,10 @@ function bindDashEvents() {
   if (grid) grid.addEventListener("click", (ev) => { const b = ev.target.closest("[data-ic]"); if (b) pickIcon(b.dataset.ic); });
   const th = $("#thRow"); if (th) th.addEventListener("click", (ev) => { const b = ev.target.closest("[data-theme]"); if (b) setTheme(b.dataset.theme); });
   const rr = $("#radRow"); if (rr) rr.addEventListener("click", (ev) => { const b = ev.target.closest("[data-radius]"); if (b) setRadius(b.dataset.radius); });
+  [["gridRow", "grid", GRID_OPT], ["avRow", "av", AV_OPT], ["fontRow", "font", FONT_OPT]].forEach(([rid, attr, map]) => {
+    const r = $("#" + rid);
+    if (r) r.addEventListener("click", (ev) => { const b = ev.target.closest("[data-" + attr + "]"); if (b) setOpt(attr, b.dataset[attr], map); });
+  });
   const af = $("#avaFile");
   if (af) af.addEventListener("change", () => uploadAvatar(af));
 }
@@ -669,10 +683,13 @@ function copyText(txt, msg) {
     .catch(() => toast(txt));
 }
 async function shareNative() {
+  const loc = () => location.href.split("#")[0];
   try {
     if (navigator.share) { await navigator.share({ title: document.title, url: loc() }); return; }
     throw 0;
-  } catch { toast("Gunakan tombol Salin di perangkat ini."); }
+  } catch {}
+  try { await navigator.clipboard.writeText(loc()); toast("Link disalin — tinggal tempel di mana saja."); }
+  catch { const v = window.prompt("Salin link halamanmu:", loc()); if (v === null) closeModal(); }
 }
 
 /* ================= modal profil ================= */
@@ -803,7 +820,7 @@ function makeQr(el, text) {
   img.alt = "QR code";
   img.onload = () => { el.innerHTML = ""; el.appendChild(img); };
   img.onerror = () => { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--mute);font-size:12.5px">QR tidak dapat dimuat tanpa koneksi.<br>Gunakan tombol Salin.</div>'; };
-  img.src = "https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=10&qzone=1&data=" + encodeURIComponent(text);
+  img.src = "/api/qr?t=" + encodeURIComponent(text);
   el.__img = img;
 }
 function downQr() {

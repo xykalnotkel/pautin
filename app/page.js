@@ -157,10 +157,10 @@ export default function Landing() {
               </p>
               <div className="mid" style={{ display: "flex", gap: 13, flexWrap: "wrap", marginBottom: 16 }}>
                 <a href="/app?signup=1" className="btn">Buat Halaman Gratis {I.arrow}</a>
-                <a href="/u/rizky" className="btn ghost">Lihat Contoh</a>
+                <a href="#lihat" className="btn ghost">Lihat Tampilannya</a>
               </div>
               <p style={{ fontSize: 13, color: MUTE, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ color: G }}>{I.shield}</span> Dilindungi Cloudflare · PBKDF2 · anti-bot Turnstile
+                <span style={{ color: G }}>{I.shield}</span> Dilindungi Cloudflare · PBKDF2 · rate-limit anti-spam
               </p>
             </div>
             <div className="phonew"><PhoneMock /></div>
@@ -175,6 +175,42 @@ export default function Landing() {
                 <div style={{ color: "rgba(247,240,227,.6)", fontSize: 13, fontWeight: 600 }}>{k}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section id="lihat" style={{ padding: "104px 22px 60px", background: "#FBFAF5" }}>
+          <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 44 }}>
+              <h2 style={{ fontFamily: "var(--font-sora),sans-serif", fontSize: "clamp(26px,3.4vw,38px)", fontWeight: 800, letterSpacing: "-1.4px", margin: "0 0 12px", color: INK }}>
+                Ini tampilan aslinya, bukan ilustrasi
+              </h2>
+              <p style={{ color: MUTE, fontSize: 15.5, lineHeight: 1.7, maxWidth: 560, margin: "0 auto" }}>
+                Screenshot sungguhan dari Pautin: editor di dashboard dan hasil halaman publiknya.
+              </p>
+            </div>
+            <style>{`.shotgrid{display:grid;grid-template-columns:1.08fr .92fr;gap:26px;align-items:start}
+.shotcard{background:#fff;border:1px solid ${LINE};border-radius:26px;padding:14px;box-shadow:0 30px 60px -38px rgba(15,43,35,.35)}
+.shotcard img{width:100%;height:auto;display:block;border-radius:16px}
+.shotcap{font-size:12.5px;font-weight:700;color:${MUTE};padding:12px 4px 2px;line-height:1.6}
+.shotcap b{color:${INK}}
+@media(max-width:920px){.shotgrid{grid-template-columns:1fr!important}}
+@media(max-width:560px){.shotcard{border-radius:20px;padding:10px}}`}</style>
+            <div className="shotgrid">
+              <div className="shotcard">
+                <img src="/s/dash.webp" alt="Screenshot dashboard editor Pautin" loading="lazy" width="1100" height="764" />
+                <div className="shotcap"><b>Editor dashboard.</b> Pilih tema, bentuk tombol, susunan satu/dua kolom, bentuk foto profil, hingga gaya huruf.</div>
+              </div>
+              <div>
+                <div className="shotcard" style={{ marginBottom: 26 }}>
+                  <img src="/s/page.webp" alt="Screenshot halaman publik Pautin" loading="lazy" width="880" height="611" />
+                  <div className="shotcap"><b>Halaman publik.</b> Satu alamat singkat berisi semua tautanmu — tinggal bagikan.</div>
+                </div>
+                <div className="shotcard">
+                  <img src="/s/page-m.webp" alt="Screenshot halaman publik Pautin versi HP" loading="lazy" width="420" height="909" />
+                  <div className="shotcap"><b>Rapi di HP.</b> Dari 390 px sampai layar lebar, tetap enak dilihat.</div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
