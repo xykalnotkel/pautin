@@ -1,12 +1,12 @@
-# 🔗 Pautin — "Satu Link untuk Semua Tautanmu"
+# Pautin — "Satu Link untuk Semua Tautanmu"
 
 Aplikasi web ala **Linktree** berbasis **Next.js (App Router)** — multi-user, tiap user punya
 halaman profil berisi kumpulan link yang bisa dikelola dan dibagikan lewat satu tautan unik.
 
-🌐 **Live:** https://pautin.vercel.app · 📦 **Repo:** https://github.com/xykalnotkel/pautin
-🧠 **Backend auth:** Cloudflare **D1** (database) + **Turnstile** (anti-bot daftar/masuk)
+**Live:** https://pautin.vercel.app · 📦 **Repo:** https://github.com/xykalnotkel/pautin
+**Backend auth:** Cloudflare **D1** (database) + **Turnstile** (anti-bot daftar/masuk)
 
-## ✨ Fitur
+## Fitur
 
 **Halaman publik** `/u/<username>`
 - Profil: nama, bio, avatar, penghitung kunjungan
@@ -19,7 +19,7 @@ halaman profil berisi kumpulan link yang bisa dikelola dan dibagikan lewat satu 
 - Drag & drop urutan link · 8 tema + bentuk tombol, pratinjau langsung
 - Statistik kunjungan & klik · Salin Link, Bagikan (WA/FB/X/TG), QR code (unduh PNG)
 
-## 🚀 Menjalankan lokal
+## Menjalankan lokal
 
 ```bash
 cd pautin-next
@@ -30,7 +30,7 @@ npm run dev    # http://localhost:3000
 
 Tanpa env apa pun, aplikasi otomatis memakai **SQLite lokal** (`data.db`).
 
-## 🧠 Backend & Cloudflare
+## Backend & Cloudflare
 
 **Database — Cloudflare D1** (via HTTP API, adapter di `lib/db.js`):
 - Bila env `CLOUDFLARE_API_TOKEN` + `CF_ACCOUNT_ID` + `CF_D1_ID` di-set → pakai D1.
@@ -46,7 +46,7 @@ yang memblokir cookie). Password di-hash PBKDF2-SHA256 120k iterasi + salt acak.
 ### Akun demo (password: `demo123`)
 `rizky` (kreator) · `nadia` (foodie) · `kopikita` (kedai kopi)
 
-## ▲ Deploy / update di Vercel
+## Deploy / update di Vercel
 
 Project sudah terhubung. Env yang dibutuhkan (Settings → Environment Variables):
 
@@ -66,7 +66,7 @@ git add -A && git commit -m "..." && git push
 npx vercel --prod        # (CLI sudah ter-link ke project pautin)
 ```
 
-## 📁 Struktur
+## Struktur
 
 ```
 pautin-next/
@@ -90,7 +90,7 @@ pautin-next/
 └─ package.json    # next 15 · react 19 · @libsql/client
 ```
 
-## 🔌 API
+## API
 
 | Method | Path | Fungsi |
 |---|---|---|
@@ -104,7 +104,7 @@ pautin-next/
 | POST | `/api/links/click/<id>` | catat klik (publik) |
 | POST | `/api/reorder` | simpan urutan |
 
-## 🛡 Keamanan
+## Keamanan
 - Password PBKDF2-SHA256 120k iterasi + salt acak · perbandingan timing-safe
 - Semua output user di-escape (anti-XSS) · SQL pakai parameter binding (anti-injection)
 - Username divalidasi regex + daftar cadangan · validasi URL ketat · ownership link selalu dicek
