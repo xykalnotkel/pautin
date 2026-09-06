@@ -48,6 +48,7 @@ export default async function PublicPage({ params, searchParams }) {
   if (!isPreview) {
     try {
       await db.execute({ sql: "UPDATE users SET views=views+1 WHERE id=?", args: [Number(u.id)] });
+      await db.execute({ sql: "INSERT INTO daily_stats(user_id,day,views) VALUES(?,date('now'),1) ON CONFLICT(user_id,day) DO UPDATE SET views=views+1", args: [Number(u.id)] });
     } catch {}
   }
 

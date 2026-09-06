@@ -16,7 +16,7 @@ export default function AboutPage() {
         <li><strong>Ringan dan cepat.</strong> Halaman publik dirender langsung di server, tanpa jejak iklan atau pelacak pihak ketiga.</li>
         <li><strong>Privasi sejak awal.</strong> Data profil hanya dipakai untuk menjalankan layanan. Kami tidak menjual data ke siapa pun.</li>
         <li><strong>Gratis untuk semua.</strong> Fitur inti — halaman, tautan tanpa batas, tema, dan statistik — terbuka tanpa biaya.</li>
-        <li><strong>Keamanan yang serius.</strong> Kata sandi di-hash dengan PBKDF2, form dilindungi Turnstile dan pembatasan laju permintaan (rate limit).</li>
+        <li><strong>Keamanan yang serius.</strong> Kata sandi di-hash dengan PBKDF2, akun baru wajib verifikasi email, dan form dibatasi laju permintaannya (rate limit).</li>
       </ul>
       <h2>Teknologi</h2>
       <p>

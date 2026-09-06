@@ -13,6 +13,7 @@ export async function POST(req) {
   let title = String(d.title || "").trim().slice(0, 90);
   const url = cleanUrl(d.url).slice(0, 500);
   const emoji = String(d.emoji || "").trim().slice(0, 8);
+  const grp = String(d.grp || "").trim().slice(0, 40);
 
   if (!url) return NextResponse.json({ error: "URL wajib diisi." }, { status: 400 });
   if (badUrl(url)) return NextResponse.json({ error: "URL tidak valid. Contoh: https://instagram.com/namamu" }, { status: 400 });
@@ -23,8 +24,8 @@ export async function POST(req) {
   const nxt = await db.execute({ sql: "SELECT COALESCE(MAX(pos)+1,0) p FROM links WHERE user_id=?", args: [Number(u.id)] });
   const pos = Number(nxt.rows[0].p);
   const r = await db.execute({
-    sql: "INSERT INTO links(user_id,title,url,emoji,kind,pos,clicks,created_at) VALUES(?,?,?,?,?,?,0,?)",
-    args: [Number(u.id), title, url, emoji, kind, pos, now()],
+    sql: "INSERT INTO links(user_id,title,url,emoji,kind,grp,pos,clicks,created_at) VALUES(?,?,?,?,?,?,?,0,?)",
+    args: [Number(u.id), title, url, emoji, kind, grp, pos, now()],
   });
   return NextResponse.json({ ok: true, id: Number(r.lastInsertRowid) }, { status: 201 });
 }

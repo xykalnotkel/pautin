@@ -21,6 +21,7 @@ export async function PUT(req, { params }) {
   let title = String(d.title || "").trim().slice(0, 90);
   const url = cleanUrl(d.url).slice(0, 500);
   const emoji = String(d.emoji || "").trim().slice(0, 8);
+  const grp = String(d.grp || "").trim().slice(0, 40);
 
   if (!url) return NextResponse.json({ error: "URL wajib diisi." }, { status: 400 });
   if (badUrl(url)) return NextResponse.json({ error: "URL tidak valid. Contoh: https://instagram.com/namamu" }, { status: 400 });
@@ -28,8 +29,8 @@ export async function PUT(req, { params }) {
     try { title = new URL(url).hostname.replace(/^www\./, ""); } catch { title = url; }
   }
   await db.execute({
-    sql: "UPDATE links SET title=?, url=?, emoji=?, kind=? WHERE id=?",
-    args: [title, url, emoji, kindOf(url), Number(id)],
+    sql: "UPDATE links SET title=?, url=?, emoji=?, kind=?, grp=? WHERE id=?",
+    args: [title, url, emoji, kindOf(url), grp, Number(id)],
   });
   return NextResponse.json({ ok: true });
 }

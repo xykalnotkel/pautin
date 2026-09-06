@@ -124,6 +124,7 @@ function renderAuth(mode) {
       ${m === "signup" ? '<div class="fld"><label>Nama tampilan <span class="opt">opsional</span></label><input id="aN" maxlength="60" placeholder="mis. Rizky Pratama"></div>' : ""}
       <div class="fld"><label>Kata sandi ${m === "signup" ? '<span class="req">min. 8 karakter + angka</span>' : ""}</label>
         <div class="pwrow"><input id="aP" type="password" autocomplete="${m === "signup" ? "new-password" : "current-password"}" placeholder="••••••••"><button class="eye" data-act="eyetoggle" aria-label="Lihat kata sandi">${ic("eye")}</button></div>
+        ${m === "login" ? '<div class="flrow"><a href="#" class="flnk" data-act="forgot">Lupa kata sandi?</a></div>' : ""}
         ${m === "signup" ? `<div class="pwstr" id="pwStr"><i></i><i></i><i></i><i></i><span id="pwLbl">Kekuatan kata sandi</span></div>
         <div class="pwchk" id="pwChk"><span data-k="len">8+ karakter</span><span data-k="num">angka</span><span data-k="mix">huruf kecil & besar</span></div>` : ""}
       </div>
@@ -137,6 +138,67 @@ function renderAuth(mode) {
   </div></div>`;
   bindAuthActions(m);
   if (new URLSearchParams(location.search).get("authfail")) authErr("Masuk dengan akun sosial gagal. Coba lagi atau gunakan username/email.");
+}
+
+function renderForgot() {
+  window.__authMode = "forgot";
+  window.__authOnResend = null;
+  rootEl().innerHTML = `
+  <div class="auth"><div class="abox">
+    <div class="alogo">${ic("logo")}<span>Pautin</span></div>
+    <div class="ahead"><h1>Atur ulang kata sandi</h1>
+      <p>Masukkan username atau email yang terdaftar. Kami kirim tautan untuk membuat kata sandi baru.</p></div>
+    <div class="aerr" id="aerr"></div>
+    <div class="af">
+      <div class="fld"><label>Username atau email</label>
+        <input id="aF" autocomplete="username" placeholder="mis. rizky atau kamu@contoh.com" value="">
+      </div>
+    </div>
+    <button class="act abtn" id="aGo" data-act="submit">Kirim tautan atur ulang ${ic("arrowR")}</button>
+    <p class="asub"><a href="#" data-act="swap">Kembali ke masuk</a></p>
+  </div></div>`;
+  const aF = $("#aF");
+  window.__authOnSubmit = () => {
+    const id = aF.value.trim().toLowerCase();
+    const err = $("#aerr"); if (err) err.classList.remove("show");
+    if (!id) return authErr("Masukkan username atau email yang terdaftar.");
+    const go = $("#aGo"); if (go) go.disabled = true;
+    send("forgot", "POST", { id })
+      .then((d) => {
+        if (!d.ok) throw new Error(d.error || "Gagal mengirim.");
+        renderForgotSent(d.email || id, d.devLink, id);
+      })
+      .catch((e) => { authErr(e.message); const b = $("#aGo"); if (b) b.disabled = false; });
+  };
+  aF.addEventListener("keydown", (e) => { if (e.key === "Enter") window.__authOnSubmit(); });
+  aF.focus();
+}
+
+function renderForgotSent(masked, devLink, id) {
+  window.__authMode = "forgotdone";
+  window.__authOnSubmit = null;
+  window.__pendForgot = id;
+  rootEl().innerHTML = `
+  <div class="auth"><div class="abox">
+    <div class="mailic"><span class="maili">${ic("check")}</span></div>
+    <div class="ahead"><h1>Cek emailmu</h1>
+      <p>Kalau akun ${esc(masked)} terdaftar, kami kirim tautan atur ulang kata sandi ke email itu. Tautan berlaku 1 jam.</p></div>
+    <div class="aerr" id="aerr"></div>
+    ${devLink ? `<div class="devlink">Mode pengembangan (email belum disetel): <a href="${esc(devLink)}">buka tautan atur ulang</a></div>` : ""}
+    <div class="vacts">
+      <button class="act" id="aRs" data-act="resend">${ic("arrowR")} Kirim ulang email</button>
+      <button class="tbtn" data-act="swap">Kembali ke masuk</button>
+    </div>
+    <p class="asub" style="margin-top:14px">Tidak sampai? Cek folder spam, lalu coba lagi beberapa saat.</p>
+  </div></div>`;
+  window.__authOnResend = () => {
+    const btn = $("#aRs");
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    send("forgot", "POST", { id: window.__pendForgot || "" })
+      .then(() => { btn.disabled = false; toast("Email atur ulang terkirim ulang."); })
+      .catch((e) => { btn.disabled = false; authErr(e.message); });
+  };
 }
 
 function renderMailCheck(email, devLink) {
@@ -174,7 +236,8 @@ function ensureAuthDelegation() {
     const t = ev.target.closest("[data-act]");
     if (!t) return;
     const act = t.dataset.act;
-    if (act === "swap") { ev.preventDefault(); renderAuth(window.__authMode === "mail" ? "login" : window.__authMode === "signup" ? "login" : "signup"); }
+    if (act === "swap") { ev.preventDefault(); renderAuth(window.__authMode === "login" || !window.__authMode ? "signup" : "login"); }
+    else if (act === "forgot") { renderForgot(); }
     else if (act === "eyetoggle" || act === "eyetoggle2") { const row = t.closest(".pwrow"); const i = row && row.querySelector("input"); if (i) { i.type = i.type === "password" ? "text" : "password"; t.innerHTML = i.type === "password" ? ic("eye") : ic("eyeOff"); } }
     else if (act === "submit" && window.__authOnSubmit) window.__authOnSubmit();
     else if (act === "resend" && window.__authOnResend) window.__authOnResend();
@@ -302,6 +365,8 @@ function renderDashboard(isNew) {
         <div class="shape-row" id="avRow"></div>
         <div class="sectag" style="padding:16px 18px 8px">Gaya huruf</div>
         <div class="shape-row" id="fontRow"></div>
+        <div class="sectag" style="padding:16px 18px 8px">Warna aksen <span class="opt">opsional</span></div>
+        <div class="accrow" id="accRow"></div>
       </div>
 
       <div class="card">
@@ -312,6 +377,7 @@ function renderDashboard(isNew) {
           <div class="stat"><div class="v" id="stLinks">0</div><div class="k">Tautan</div></div>
           <div class="stat"><div class="v" id="stJoin">-</div><div class="k">Sejak</div></div>
         </div>
+        <button class="act" data-act="stats" style="width:100%;margin-top:14px">${ic("chart")} Grafik 30 hari</button>
       </div>
 
       <div class="card">
@@ -337,6 +403,9 @@ function renderDashboard(isNew) {
             <div class="fld full"><label>Judul</label><input id="lT" maxlength="90" placeholder="mis. Channel YouTube-ku"></div>
             <div class="fld full"><label>Tautan (URL)</label><input id="lU" maxlength="500" placeholder="mis. https://youtube.com/@namamu">
               <div class="hint">Media sosial terdeteksi otomatis. Awalan https:// ditambahkan bila tidak ada.</div>
+            </div>
+            <div class="fld full"><label>Grup <span class="opt">opsional</span></label><input id="lG" maxlength="40" placeholder="mis. Sosmed, Toko, Artikel" autocomplete="off">
+              <div class="hint">Tautan dengan grup sama akan tampil di bawah judul yang sama di halaman publikmu.</div>
             </div>
             <div class="fld full"><label>Ikon <span class="opt">pilih salah satu</span></label>
               <div style="display:flex;gap:12px;align-items:center">
@@ -430,7 +499,41 @@ function renderThemes() {
   segInto($("#gridRow"), GRID_OPT, S.u.grid || "list", "grid");
   segInto($("#avRow"), AV_OPT, S.u.av || "circle", "av");
   segInto($("#fontRow"), FONT_OPT, S.u.font || "sans", "font");
+  renderAccRow();
   paintPreview();
+}
+
+/* ================= aksen warna ================= */
+const ACC_DEFAULT = ["", "#E4572E", "#0F5B4D", "#2563EB", "#7C3AED", "#BE185D", "#D97706", "#0E7490", "#334155"];
+function renderAccRow() {
+  const r = $("#accRow"); if (!r) return;
+  const cur = (S.u.accent || "").toLowerCase();
+  r.innerHTML = ACC_DEFAULT.map((hex) =>
+    hex
+      ? `<button type="button" class="acc" data-hex="${hex}" title="Aksen ${hex}" style="background:${hex}"></button>`
+      : `<button type="button" class="acc def${cur ? "" : " on"}" data-hex="" title="Pakai warna bawaan tema">A</button>`
+  ).join("") +
+    `<label class="acc cust" title="Pilih warna sendiri"><input type="color" id="accPick" value="${/^#[0-9a-f]{6}$/.test(cur) ? cur : "#E4572E"}">${ic("palette")}</label>`;
+  r.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-hex]");
+    if (b) { setAccent(b.dataset.hex || ""); paintAccSel(); }
+  });
+  const ip = $("#accPick");
+  if (ip) ip.addEventListener("input", () => setAccent(ip.value));
+}
+function paintAccSel() {
+  const cur = (S.u.accent || "").toLowerCase();
+  $$("#accRow [data-hex]").forEach((b) => b.classList.toggle("on", (b.dataset.hex || "") === cur));
+}
+function setAccent(hex) {
+  hex = String(hex || "").toLowerCase();
+  S.u.accent = /^#[0-9a-f]{6}$/.test(hex) ? hex : "";
+  paintAccSel();
+  paintPreview();
+  const ip = $("#accPick"); if (ip) ip.value = S.u.accent || "#E4572E";
+  send("settings", "PUT", { accent: S.u.accent })
+    .then(() => toast(S.u.accent ? "Warna aksen disimpan." : "Aksen kembali ke bawaan tema."))
+    .catch((e) => toast(e.message, 1));
 }
 function paintPreview() {
   const pvb = $("#pvb"); if (!pvb) return;
@@ -439,6 +542,8 @@ function paintPreview() {
   const fg = t.dark ? "#f4f1fb" : "#3a2338";
   const pbtn = t.dark ? "rgba(255,255,255,.12)" : "rgba(255,255,255,.85)";
   pvb.style.setProperty("--pb", pbtn);
+  if (S.u.accent) pvb.style.setProperty("--pvacc", S.u.accent + "3d");
+  else pvb.style.removeProperty("--pvacc");
   pvb.style.color = fg;
   $$("#pvName,#pvBio", pvb).forEach((el) => { el.style.color = fg; });
   const pva = $("#pvAva");
@@ -494,14 +599,14 @@ function toggleAdd(force) {
   if (S.showAdd && !S.editing) { $("#lT").focus(); }
 }
 function resetForm() {
-  $("#lT").value = ""; $("#lU").value = ""; $("#lErr").classList.remove("show");
+  $("#lT").value = ""; $("#lU").value = ""; $("#lG").value = ""; $("#lErr").classList.remove("show");
   $("#saveLbl").textContent = "Simpan Tautan"; S.editing = null; S.iconKey = "";
   syncPicker();
 }
 function openEdit(id) {
   const l = S.links.find((x) => x.id === id); if (!l) return;
   S.editing = id; S.iconKey = l.emoji || "";
-  $("#lT").value = l.title; $("#lU").value = l.url;
+  $("#lT").value = l.title; $("#lU").value = l.url; $("#lG").value = l.grp || "";
   $("#saveLbl").textContent = "Simpan Perubahan";
   if (!S.showAdd) toggleAdd(true);
   syncPicker();
@@ -521,7 +626,7 @@ async function saveLink() {
   const title = $("#lT").value.trim(), url = $("#lU").value.trim();
   const e = validateUrl(url);
   if (e) return showFormErr(e);
-  const body = { title, url, emoji: S.iconKey };
+  const body = { title, url, emoji: S.iconKey, grp: $("#lG").value.trim() };
   try {
     if (S.editing) await send("links/" + S.editing, "PUT", body);
     else await send("links", "POST", body);
@@ -557,7 +662,7 @@ function renderLinks() {
       <span class="e">${linkIcon(l)}</span>
       <div class="inf">
         <div class="ti">${esc(l.title)}<span class="kind">${esc(l.kind)}</span></div>
-        <div class="ur">${esc(l.url)}</div>
+        <div class="ur">${esc(l.url)}${l.grp ? `<span class="grtag">${esc(l.grp)}</span>` : ""}</div>
       </div>
       <span class="cl">${ic("eye")} ${fmtNum(l.clicks)}</span>
       <span class="ops">
@@ -646,6 +751,7 @@ function bindDashEvents() {
     else if (act === "copylink") copyText(t.dataset.url, "URL disalin.");
     else if (act === "share") { closeMenu(); openShare(); }
     else if (act === "profile") { closeMenu(); openProfile(); }
+    else if (act === "stats") { closeMenu(); openStats(); }
     else if (act === "addtoggle") { if (S.editing) { resetForm(); } toggleAdd(); if (!S.showAdd) resetForm(); }
     else if (act === "canceladd") { toggleAdd(false); resetForm(); }
     else if (act === "savelink") saveLink();
@@ -691,6 +797,67 @@ async function shareNative() {
   try { await navigator.clipboard.writeText(loc()); toast("Link disalin — tinggal tempel di mana saja."); }
   catch { const v = window.prompt("Salin link halamanmu:", loc()); if (v === null) closeModal(); }
 }
+
+/* ================= grafik statistik ================= */
+async function openStats() {
+  const mv = $("#mv"); if (!mv) return;
+  mv.className = "mv show";
+  mv.innerHTML = `
+  <div class="box wide">
+    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
+    <h3>${ic("chart")} Statistik 30 hari</h3>
+    <div class="sub">Kunjungan halaman publik & klik tautanmu, 30 hari terakhir.</div>
+    <div id="stWrap" class="stwrap"><div class="stload">Memuat…</div></div>
+  </div>`;
+  try {
+    const d = await get("stats");
+    const wrap = $("#stWrap"); if (!wrap) return;
+    wrap.innerHTML = statChartHtml(d);
+  } catch (x) {
+    const w = $("#stWrap"); if (w) w.innerHTML = `<div class="sterr">${esc(x.message || "Gagal memuat statistik.")}</div>`;
+  }
+}
+function statChartHtml(d) {
+  const days = d.days || [];
+  const max = Math.max(1, ...days.map((x) => Math.max(x.views, x.clicks)));
+  const W = 600, H = 210, pl = 40, pr = 6, pt = 14, pb = 26;
+  const iw = W - pl - pr, ih = H - pt - pb;
+  const n = Math.max(1, days.length);
+  const step = iw / n;
+  const bw = Math.min(9, Math.max(2, step / 2 - 3));
+  const grid = [0, .25, .5, .75, 1].map((f) => {
+    const y = pt + ih * (1 - f);
+    return `<line x1="${pl}" x2="${W - pr}" y1="${y}" y2="${y}" stroke="#EFE7D8" stroke-width="1"/><text x="${pl - 7}" y="${y + 3}" font-size="9" fill="#A89F8C" text-anchor="end">${Math.round(max * f)}</text>`;
+  }).join("");
+  const cols = days.map((x, i) => {
+    const vh = Math.round((x.views / max) * ih), ch = Math.round((x.clicks / max) * ih);
+    const cx = pl + step * i + step / 2;
+    const x0 = cx - bw - 1, x1 = cx + 1;
+    const lab = dayLabel(x.day);
+    return `<g>
+      <rect x="${x0}" y="${H - pb - vh}" width="${bw}" height="${vh || 0}" rx="2" fill="#0F5B4D"><title>${lab}: ${x.views} kunjungan</title></rect>
+      <rect x="${x1}" y="${H - pb - ch}" width="${bw}" height="${ch || 0}" rx="2" fill="#E4572E"><title>${lab}: ${x.clicks} klik</title></rect>
+      ${i % 5 === 0 ? `<text x="${cx}" y="${H - 9}" font-size="9.5" fill="#8B8575" text-anchor="middle">${dayShort(x.day)}</text>` : ""}
+    </g>`;
+  }).join("");
+  const top = (d.top || []);
+  const topHtml = top.length
+    ? top.map((l) => `<li><span class="stt">${esc(l.title || "Tautan")}</span><b>${l.clicks} klik</b></li>`).join("")
+    : `<li class="stn">Belum ada klik tercatat. Bagikan halamanmu dan pantau di sini.</li>`;
+  return `
+  <div class="sthead">
+    <span class="stk v">${d.totalViews}<i>kunjungan</i></span>
+    <span class="stk c">${d.totalClicks}<i>klik</i></span>
+  </div>
+  <svg viewBox="0 0 ${W} ${H}" class="stchart" role="img" aria-label="Grafik kunjungan dan klik 30 hari">${grid}${cols}</svg>
+  <div class="stleg"><span class="v"><i></i>Kunjungan</span><span class="c"><i></i>Klik</span></div>
+  <div class="sttop"><div class="sttag">Paling sering diklik</div><ul>${topHtml}</ul></div>`;
+}
+function dayLabel(mmdd) {
+  const m = parseInt(mmdd, 10), dd = parseInt(mmdd.slice(3), 10);
+  return `${dd} ${["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"][(m - 1 + 12) % 12]}`;
+}
+function dayShort(mmdd) { return String(parseInt(mmdd.slice(3), 10)); }
 
 /* ================= modal profil ================= */
 function openProfile() {

@@ -37,8 +37,8 @@ export default function PrivacyPage() {
       </p>
       <h2>6. Perlindungan anti-bot dan anti-DDoS</h2>
       <p>
-        Formulir pendaftaran dan masuk dilindungi oleh <strong>Cloudflare Turnstile</strong>, serta pembatasan laju
-        permintaan berbasis alamat IP untuk mencegah serangan berulang. Halaman publik juga dapat dilayani lewat
+        Formulir pendaftaran dan masuk dibatasi laju permintaannya berbasis alamat IP untuk mencegah serangan
+        berulang, dan setiap akun baru wajib memverifikasi email. Halaman publik juga dapat dilayani lewat
         jaringan Cloudflare yang memfilter serangan DDoS secara otomatis.
       </p>
       <h2>7. Tautan pihak ketiga</h2>

@@ -13,6 +13,8 @@ const FIELDS = [
   ["font", FONT_STACKS],
 ];
 
+const ACCENT_RE = /^#[0-9a-fA-F]{6}$/;
+
 export async function PUT(req) {
   const u = await getSessionUser();
   if (!u) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -26,6 +28,13 @@ export async function PUT(req) {
     const val = String(d[key]);
     if (!allowed[val]) return NextResponse.json({ error: key + " tidak dikenal" }, { status: 400 });
     sets.push(`${key}=?`);
+    args.push(val);
+  }
+  if (d.accent !== undefined) {
+    const val = String(d.accent).trim();
+    if (val !== "" && !ACCENT_RE.test(val))
+      return NextResponse.json({ error: "warna aksen tidak valid" }, { status: 400 });
+    sets.push("accent=?");
     args.push(val);
   }
   if (!sets.length) return NextResponse.json({ ok: true });

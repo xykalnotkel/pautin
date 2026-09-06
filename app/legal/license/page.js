@@ -32,7 +32,7 @@ export default function LicensePage() {
       <h2>Attribution</h2>
       <ul>
         <li>Typeface: Sora &amp; Manrope (OFL License) oleh Google Fonts.</li>
-        <li>Infrastruktur: Next.js (MIT), Cloudflare D1/Turnstile, Vercel.</li>
+        <li>Infrastruktur: Next.js (MIT), Cloudflare D1, Vercel.</li>
       </ul>
     </Shell>
   );

@@ -98,7 +98,7 @@ export default function Landing() {
         details.fq .pm{width:24px;height:24px;border-radius:50%;background:#EFE9DB;color:${G};display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:.25s;font-weight:800}
         details.fq[open] summary .pm{transform:rotate(45deg);background:${OR};color:#fff}
         details.fq .ab{padding:0 20px 18px;color:${MUTE};font-size:13.8px;line-height:1.75}
-        @media(max-width:920px){.hero .grid{grid-template-columns:1fr!important;gap:64px;text-align:center}.hero .ctr{margin:0 auto}.hero .mid{justify-content:center}.steps{grid-template-columns:1fr!important}.floater{display:none}}
+        @media(max-width:920px){.hero .grid{grid-template-columns:1fr!important;gap:64px;text-align:center}.hero .ctr{margin:0 auto}.hero .mid{justify-content:center}.steps{grid-template-columns:1fr!important}.namegrid{grid-template-columns:1fr!important}.floater{display:none}}
         @media(max-width:560px){.statsg{grid-template-columns:1fr 1fr!important}.phonew{transform:scale(.94)}}
       `}</style>
       <div style={{ minHeight: "100vh", background: CREAM, color: INK, overflowX: "hidden" }}>
@@ -249,6 +249,31 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section style={{ maxWidth: 1120, margin: "0 auto", padding: "104px 22px", textAlign: "center" }}>
+          <h2 className="secT">Kenapa namanya <span style={{ color: G }}>Pautin</span>?</h2>
+          <p style={{ color: MUTE, fontSize: 15.5, lineHeight: 1.8, maxWidth: 620, margin: "18px auto 0" }}>
+            <b style={{ color: INK }}>Paut</b> berarti mengikat atau menyambungkan — akar kata dari
+            &ldquo;berpaut&rdquo; dan &ldquo;pautan&rdquo;. Akhiran <b style={{ color: INK }}>-in</b> mengubahnya
+            menjadi ajakan khas Indonesia: <i>pautkan</i>. Logo dua mata rantai yang saling mengait melambangkan
+            dua sisi yang tersambung jadi satu — kamu dan semua tautanmu.
+          </p>
+          <div className="namegrid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 22, marginTop: 44, textAlign: "left" }}>
+            {[
+              ["Paut", "Kata dasar paut berarti mengikat erat, menyambung, atau menghubungkan. Dari sinilah kata &ldquo;tautan&rdquo; lahir — dan setiap tautanmu memang sebuah pautan."],
+              ["-in", "Akhiran bahasa Indonesia untuk ajakan: pautkan, satukan, kaitkan. Pautin = &ldquo;satukan semua tautanmu&rdquo; di satu tempat."],
+              ["Dua mata rantai", "Ikon dua rantai yang saling mengait: apa pun yang ingin kamu sambungkan — profil, toko, karya — akhirnya tersambung jadi satu mata rantai utuh."],
+            ].map(([h, tx]) => (
+              <div key={h} style={{ background: PAPER, border: `1.5px solid ${LINE}`, borderRadius: 22, padding: "28px 24px", boxShadow: "0 18px 40px -30px rgba(11,30,25,.4)" }}>
+                <div style={{ fontFamily: "var(--font-sora),sans-serif", fontWeight: 800, fontSize: 20, color: G, marginBottom: 10, letterSpacing: "-.4px" }}>{h}</div>
+                <p style={{ color: MUTE, fontSize: 13.8, lineHeight: 1.75, margin: 0 }}>{tx}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginTop: 44, background: "#E4EFEA", border: `1.5px solid #CFE0D6`, color: G, fontWeight: 800, fontSize: 14.5, borderRadius: 999, padding: "13px 24px" }}>
+            <Mark s={26} /> Satu link. Semua tautanmu — pautkan semuanya.
           </div>
         </section>
 
