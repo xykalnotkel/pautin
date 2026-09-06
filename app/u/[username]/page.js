@@ -17,19 +17,21 @@ async function getUserLinks(uid) {
 export async function generateMetadata({ params }) {
   const { username } = await params;
   const u = await getUser(username);
-  if (!u)
-    return {
-      title: "Halaman tidak ditemukan",
-      robots: { index: false },
-    };
+  if (!u) return {}; // biar notFound() di badan halaman yang menetapkan status 404
   return {
     title: u.name,
     description: (u.bio || `Halaman ${u.username} di Pautin.`).slice(0, 160),
+    alternates: { canonical: `/u/${u.username}` },
     openGraph: {
       title: `${u.name} — Pautin`,
-      description: (u.bio || "").slice(0, 160) || undefined,
+      description: (u.bio || "").slice(0, 160) || `Halaman ${u.username} di Pautin.`,
       type: "profile",
+      url: `/u/${u.username}`,
+      username: u.username,
+      siteName: "Pautin",
+      locale: "id_ID",
     },
+    twitter: { card: "summary_large_image" },
     robots: { index: true, follow: true },
   };
 }
@@ -55,8 +57,23 @@ export default async function PublicPage({ params, searchParams }) {
     { preview: isPreview }
   );
 
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://pautin.xyc.my.id";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: u.name,
+      url: `${base}/u/${u.username}`,
+      image: u.avatar || undefined,
+      description: u.bio || undefined,
+      identifier: u.username,
+    },
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <style dangerouslySetInnerHTML={{ __html: css }} />
       <div dangerouslySetInnerHTML={{ __html: body }} />
     </>

@@ -1,0 +1,7 @@
+name = "pautin-sec"
+main = "security.js"
+compatibility_date = "2024-10-01"
+
+kv_namespaces = [ { binding = "RL", id = "49eedf3fe7c046559b23299b90d0b020" } ]
+
+routes = [ { pattern = "pautin.xyc.my.id/*", zone_name = "xyc.my.id" } ]

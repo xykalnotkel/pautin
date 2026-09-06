@@ -113,8 +113,8 @@ export default function Landing() {
         .btn.ghost:hover{background:${PAPER}}
         .hero{background:radial-gradient(1000px 620px at 88% -14%,rgba(15,91,77,.14),transparent 62%),radial-gradient(760px 480px at -6% 40%,rgba(228,87,46,.09),transparent 60%)}
         @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
-        .chipx{padding:8px 16px;border-radius:999px;background:#fff;border:1.5px solid ${LINE};font-size:12.5px;font-weight:800;color:${INK};display:inline-flex;align-items:center;gap:8px}
-        .chipa{padding:8px 16px;border-radius:999px;background:${G};color:#F7F0E3;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 20px -10px rgba(15,91,77,.8)}
+        .chipx{padding:7px 14px;border-radius:999px;background:#fff;border:1.5px solid ${LINE};font-size:12.5px;font-weight:800;color:${INK};display:inline-flex;align-items:center;gap:8px}
+        .chipa{padding:7px 14px;border-radius:999px;background:${G};color:#F7F0E3;font-size:12.5px;font-weight:800;display:inline-flex;align-items:center;gap:8px;box-shadow:0 8px 20px -10px rgba(15,91,77,.8)}
         .secT{font-family:var(--font-sora),sans-serif;font-size:clamp(27px,3.6vw,40px);letter-spacing:-1.1px;font-weight:800;text-align:center;line-height:1.12}
         details.fq{border:1.5px solid ${LINE};background:${PAPER};border-radius:16px;overflow:hidden}
         details.fq summary{list-style:none;cursor:pointer;padding:17px 20px;font-weight:800;font-size:14.5px;color:${INK};display:flex;justify-content:space-between;gap:12px;align-items:center}

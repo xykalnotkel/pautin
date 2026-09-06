@@ -26,3 +26,6 @@ next-env.d.ts
 
 # Vercel CLI link
 .vercel
+
+# wrangler local state
+workers/.wrangler/
