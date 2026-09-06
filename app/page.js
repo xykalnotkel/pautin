@@ -44,52 +44,28 @@ const I = {
 };
 
 function PhoneMock() {
-  const rows = [
-    [I.play ?? null, "Channel YouTube-ku"],
-    [I.doc, "Tulisan di blog"],
-    [I.heart, "Dukung karyaku"],
-    [I.mail, "Hubungi aku"],
-  ];
+  // Screenshot asli halaman publik Pautin (tangkapan layar produk, bukan ilustrasi)
   return (
-    <div style={{ position: "relative", maxWidth: 300, margin: "0 auto" }}>
-      <div style={{ background: "#0B1F19", backgroundImage: "radial-gradient(420px 300px at 85% -5%,rgba(228,87,46,.35),transparent 60%),radial-gradient(400px 320px at -10% 110%,rgba(15,91,77,.55),transparent 62%)", borderRadius: 42, padding: 12, boxShadow: "0 46px 90px -34px rgba(11,30,25,.75),inset 0 0 0 2px rgba(255,255,255,.07)", transform: "rotate(2deg)" }}>
-        <div style={{ borderRadius: 32, overflow: "hidden", background: "rgba(255,255,255,.03)" }}>
-          <div style={{ height: 22, display: "flex", justifyContent: "center", alignItems: "center" }}>
-            <i style={{ width: 86, height: 14, borderRadius: 999, background: "rgba(255,255,255,.14)", display: "block" }} />
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 18px 24px", textAlign: "center" }}>
-            <Mark s={58} />
-            <div style={{ color: "#F7F0E3", fontWeight: 800, fontSize: 16.5, marginTop: 10, fontFamily: "var(--font-sora),sans-serif" }}>Rizky Pratama</div>
-            <div style={{ color: "rgba(247,240,227,.55)", fontSize: 11.5, margin: "3px 0 4px" }}>@rizky</div>
-            <div style={{ color: "rgba(247,240,227,.62)", fontSize: 11.5, lineHeight: 1.55, maxWidth: 215 }}>
-              Developer dan kreator konten. Tips coding, teknologi, dan produktivitas.
-            </div>
-            <div style={{ display: "flex", gap: 9, margin: "15px 0 18px" }}>
-              {["youtube", "article", "chat", "heart"].map((_, i) => (
-                <span key={i} style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,.09)", border: "1px solid rgba(255,255,255,.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(247,240,227,.9)" }}>
-                  {[I.heart, I.doc, I.chat, I.pin][i] || I.linkrow}
-                </span>
-              ))}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
-              {[I.play || I.linkrow, I.doc, I.heart, I.mail].map((icEl, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, background: "rgba(255,255,255,.075)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 14, padding: "9px 13px", textAlign: "left" }}>
-                  <span style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(228,87,46,.35)", display: "flex", alignItems: "center", justifyContent: "center", color: "#F7F0E3" }}>{icEl}</span>
-                  <span style={{ flex: 1, fontSize: 12, color: "#F7F0E3", fontWeight: 600 }}>{rows[i][1]}</span>
-                  <span style={{ color: "rgba(247,240,227,.4)" }}>{I.up}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(255,255,255,.07)", border: "1px solid rgba(255,255,255,.13)", color: "rgba(247,240,227,.7)", fontSize: 10.5, borderRadius: 999, padding: "5px 12px", marginTop: 18, fontFamily: "monospace" }}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#7BC9A8", display: "inline-block" }} />
-              pautin/u/rizky
-            </div>
-          </div>
+    <div style={{ position: "relative", maxWidth: 322, margin: "0 auto" }}>
+      <div style={{
+        borderRadius: 46, padding: 11, background: "#0B1F19",
+        backgroundImage: "radial-gradient(380px 260px at 88% -6%,rgba(228,87,46,.38),transparent 60%),radial-gradient(340px 300px at -12% 112%,rgba(15,91,77,.55),transparent 62%)",
+        boxShadow: "0 46px 90px -34px rgba(11,30,25,.75),inset 0 0 0 2px rgba(255,255,255,.07)",
+        transform: "rotate(2deg)",
+      }}>
+        <div style={{ position: "relative", borderRadius: 35, overflow: "hidden", background: "#fff", lineHeight: 0 }}>
+          <img src="/s/page-m.webp" alt="Screenshot asli halaman profil Pautin di ponsel: foto, bio, dan deretan tautan"
+               width="420" height="909" style={{ width: "100%", height: "auto", display: "block" }} />
+          <div style={{ position: "absolute", top: 9, left: "50%", transform: "translateX(-50%)", width: 92, height: 17, borderRadius: 999, background: "rgba(11,30,25,.5)", backdropFilter: "blur(3px)", border: "1px solid rgba(255,255,255,.28)" }} />
         </div>
       </div>
-      <div style={{ position: "absolute", left: -110, top: 108, background: "#fff", borderRadius: 16, boxShadow: "0 24px 50px -18px rgba(11,30,25,.4)", padding: "11px 14px", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 10, animation: "floaty 4.5s ease-in-out infinite", border: `1px solid ${LINE}`, color: INK }}>
-        <span style={{ color: G }}>{I.eye || I.check}</span>
-        <span>Kunjungan baru<small style={{ display: "block", color: MUTE, fontWeight: 600, fontSize: 10.5 }}>+1 tampilan halaman</small></span>
+      <div style={{ position: "absolute", left: -108, top: 96, background: "#fff", borderRadius: 16, boxShadow: "0 24px 50px -18px rgba(11,30,25,.4)", padding: "11px 14px", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", gap: 10, animation: "floaty 4.5s ease-in-out infinite", border: `1px solid ${LINE}`, color: INK }}>
+        <span style={{ width: 30, height: 30, borderRadius: 10, background: "#EAF4EF", color: G, display: "flex", alignItems: "center", justifyContent: "center" }}>{I.check}</span>
+        <span>Screenshot asli<small style={{ display: "block", color: MUTE, fontWeight: 600, fontSize: 10.5 }}>diambil langsung dari produk</small></span>
+      </div>
+      <div style={{ position: "absolute", right: -104, top: 250, background: "#fff", borderRadius: 16, boxShadow: "0 24px 50px -18px rgba(11,30,25,.4)", padding: "11px 14px", fontSize: 12, fontWeight: 800, display: "flex", alignItems: "center", gap: 10, animation: "floaty 5.5s ease-in-out infinite", border: `1px solid ${LINE}`, color: INK }}>
+        <span style={{ width: 30, height: 30, borderRadius: 10, background: "#FDF1EA", color: OR, display: "flex", alignItems: "center", justifyContent: "center" }}>{I.eye}</span>
+        <span>QR & tema otomatis<small style={{ display: "block", color: MUTE, fontWeight: 600, fontSize: 10.5 }}>berlogo Pautin</small></span>
       </div>
     </div>
   );
@@ -98,7 +74,7 @@ function PhoneMock() {
 const faqs = [
   ["Apa bedanya Pautin dengan layanan sejenis?", "Secara konsep sama: satu halaman berisi banyak tautan. Pautin menekankan kecepatan, privasi, dan kesederhanaan — tanpa iklan, tanpa paket berbayar untuk fitur inti."],
   ["Apakah benar-benar gratis?", "Ya. Semua fitur yang tersedia sekarang — halaman profil, tautan tanpa batas, tema, statistik, dan QR — gratis sepenuhnya."],
-  ["Bagaimana dengan keamanan akun?", "Kata sandi di-hash PBKDF2-SHA256 dengan garam acak. Formulir dilindungi verifikasi Cloudflare Turnstile dan pembatasan laju permintaan, serta halaman dilayani lewat jaringan anti-DDoS Cloudflare."],
+  ["Bagaimana dengan keamanan akun?", "Kata sandi di-hash PBKDF2-SHA256 dengan garam acak dan tidak pernah disimpan dalam bentuk teks biasa. Formulir dilindungi pembatasan laju permintaan, dan seluruh halaman dilayani lewat jaringan Cloudflare anti-DDoS."],
   ["Bisakah mengganti username?", "Untuk saat ini username dipilih sekali saat mendaftar (3-20 huruf/angka kecil). Pilih yang mewakili dirimu."],
   ["Siapa pemilik data saya?", "Anda. Kami tidak menjual data. Rincian lengkap ada di halaman Kebijakan Privasi."],
 ];
