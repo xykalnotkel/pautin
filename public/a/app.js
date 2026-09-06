@@ -785,11 +785,11 @@ function openShare() {
   const shareUrl = (base) => base.replace("{{U}}", enc).replace("{{T}}", t);
   const mv = $("#mv");
   mv.className = "mv show";
-  const cells = [
-    ["wa", "WhatsApp", "#25D366", "https://wa.me/?text={{T}}%20{{U}}"],
+  let cells = [
+    ["whatsapp", "WhatsApp", "#25D366", "https://wa.me/?text={{T}}%20{{U}}"],
     ["x", "X", "#000", "https://twitter.com/intent/tweet?text={{T}}&url={{U}}"],
-    ["tg", "Telegram", "#229ED9", "https://t.me/share/url?url={{U}}&text={{T}}"],
-    ["fb", "Facebook", "#1877F2", "https://www.facebook.com/sharer/sharer.php?u={{U}}"],
+    ["telegram", "Telegram", "#229ED9", "https://t.me/share/url?url={{U}}&text={{T}}"],
+    ["facebook", "Facebook", "#1877F2", "https://www.facebook.com/sharer/sharer.php?u={{U}}"],
   ].map(([k, label, color, href]) => {
     const p = window.PTIcons.brand[k];
     return `<a class="shs" href="${href.replace("{{T}}", t).replace("{{U}}", enc)}" target="_blank" rel="noopener"><span class="c" style="background:${color}">${svgWrap(p)}</span>${label}</a>`;
