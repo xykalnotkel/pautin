@@ -1,0 +1,23 @@
+# Environment (rahasia — jangan pernah di-commit)
+.env
+.env*.local
+
+# Dependensi & build
+node_modules
+.next
+out
+
+# Database lokal
+data.db
+data.db-*
+
+# Kunci/credential pengguna
+*.key
+*.pem
+credentials*.json
+service-account*.json
+
+# Lainnya
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
