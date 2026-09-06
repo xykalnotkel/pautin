@@ -3,7 +3,7 @@
 Aplikasi web ala **Linktree** berbasis **Next.js (App Router)** — multi-user, tiap user punya
 halaman profil berisi kumpulan link yang bisa dikelola dan dibagikan lewat satu tautan unik.
 
-**Live:** https://pautin.vercel.app · 📦 **Repo:** https://github.com/xykalnotkel/pautin
+**Live:** https://pautin.vercel.app · **Repo:** https://github.com/xykalnotkel/pautin
 **Backend auth:** Cloudflare **D1** (database) + **Turnstile** (anti-bot daftar/masuk)
 
 ## Fitur
@@ -89,6 +89,24 @@ pautin-next/
 ├─ scripts/seed.js
 └─ package.json    # next 15 · react 19 · @libsql/client
 ```
+
+
+## Identitas & legal
+- Logo, ikon SVG, palet, dan typeface (Sora/Manrope) adalah aset asli Pautin — tanpa emoji di seluruh UI.
+- Halaman publik: /about · /legal/terms · /legal/privacy · /legal/license (+ LICENSE MIT).
+- Aset merek pihak ketiga hanya ikon media sosial sebagai penanda tautan.
+
+## Penyimpanan media (Cloudinary, WebP tajam & ringan)
+Upload foto profil → `/api/upload/avatar` (tanda tangan server-side) → transformasi eager
+`c_fill,w_512,h_512,q_auto:good,f_webp`; saat ditampilkan dipakai turunan `q_auto,f_webp`
+dengan lebar sesuai konteks (256–512). Env: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+`CLOUDINARY_API_SECRET`.
+
+## Perlindungan (gratis)
+1. **Cloudflare proxy (anti-DDoS native)** — domain pautin.xyc.my.id di belakang Cloudflare free plan.
+2. **Rate limit** login/register per IP di D1 (`lib/ratelimit.js`).
+3. **Turnstile** anti-bot (opsional, aktif setelah site/secret key diset).
+4. Security headers global; password PBKDF2-SHA256 + salt.
 
 ## API
 
