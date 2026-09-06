@@ -64,7 +64,7 @@ export default async function ResetPage({ searchParams }) {
             {LogoIco}
             <h1>Tautan tidak valid atau kedaluwarsa.</h1>
             <p>Tautan atur ulang kata sandi berlaku 1 jam dan sekali pakai. Minta tautan baru dari halaman masuk.</p>
-            <a className="rflnk" href="/app">Ke halaman masuk</a>
+            <a className="rflnk" href="/dashboard">Ke halaman masuk</a>
           </div>
         </div>
       </>
@@ -119,7 +119,7 @@ export default async function ResetPage({ searchParams }) {
           {LogoIco}
           <h1>Kata sandi disimpan.</h1>
           <p>Sekarang masuk dengan kata sandi barumu untuk mengelola halaman Pautin-mu.</p>
-          <a className="rfcta" href="/app">Masuk ke dashboard</a>
+          <a className="rfcta" href="/dashboard">Masuk ke dashboard</a>
         </div>
       </div>
       <script dangerouslySetInnerHTML={{ __html: js }} />

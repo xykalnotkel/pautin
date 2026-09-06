@@ -6,7 +6,7 @@ import { openSession } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET(req) {
-  const fail = NextResponse.redirect(new URL("/app?authfail=1", req.url));
+  const fail = NextResponse.redirect(new URL("/dashboard?authfail=1", req.url));
   if (!socialEnabled("google")) return fail;
   const url = new URL(req.url);
   const code = url.searchParams.get("code") || "";
@@ -19,7 +19,7 @@ export async function GET(req) {
     const prof = await exchangeCode("google", code);
     const uid = await upsertSocialUser("google", prof);
     await openSession(uid);
-    return NextResponse.redirect(new URL("/app?social=1", req.url));
+    return NextResponse.redirect(new URL("/dashboard?social=1", req.url));
   } catch (e) {
     return fail;
   }

@@ -328,3 +328,38 @@ h1,h2,h3{font-family:var(--font-sora),sans-serif}
 .stt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;color:#16382F}
 .sttop li b{font-size:11px;color:#55635C;background:#F4F0E6;border-radius:999px;padding:2px 9px;font-weight:800;flex:0 0 auto}
 .sttop .stn{justify-content:flex-start;color:#8B8575}
+
+/* ---------- menu navigasi sidebar ---------- */
+#navCard .cardh{margin-bottom:6px}
+.ngt{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 10px 6px;font-size:10.5px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;color:var(--mute);text-align:left}
+.ngt svg{width:13px;height:13px;transition:.2s;flex:0 0 auto}
+.ngt.closed svg{transform:rotate(-90deg)}
+.ng{display:flex;flex-direction:column;gap:1px;padding:0 6px 8px}
+.ng.closed{display:none}
+.ngt:not(:first-child){margin-top:6px;border-top:1px dashed var(--line)}
+.ni{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;font-size:13.5px;font-weight:700;color:var(--ink);padding:7.5px 10px;border-radius:11px;text-decoration:none;transition:.13s}
+.ni:hover{background:var(--soft)}
+.ni:active{transform:scale(.99)}
+.ni .nb{font-style:normal;font-size:10px;font-weight:800;color:var(--green);background:#E4EFEA;border-radius:999px;padding:1.5px 8px;flex:0 0 auto}
+.ni::before{content:"";width:5px;height:5px;border-radius:50%;background:#CBBFA3;flex:0 0 auto;transition:.15s}
+.ni:hover::before{background:var(--orange)}
+.ni span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- modal keamanan ---------- */
+.secrow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#FBF8F1;border:1.5px solid var(--line);border-radius:14px;padding:13px 15px;flex-wrap:wrap}
+.seinfo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.seinfo b{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--mute)}
+.sem{font-size:13.5px;font-weight:700;color:var(--ink);word-break:break-all}
+.pill{font-size:10px;font-weight:800;padding:3px 9px;border-radius:999px;display:inline-flex;width:fit-content;margin-top:2px}
+.pill.ok{background:#E4EFEA;color:var(--ok)}
+.pill.no{background:#FBE9E4;color:var(--bad)}
+.sepline{height:1px;background:var(--line);margin:18px 0 14px}
+.secline{font-size:12px;color:var(--mute)}
+
+/* ---------- modal panduan ---------- */
+.gtips{display:flex;flex-direction:column;gap:10px;margin:4px 0 16px}
+.gtip{display:flex;gap:13px;background:#FBF8F1;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}
+.gti{width:36px;height:36px;border-radius:11px;background:#E4EFEA;color:var(--green);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.gti svg{width:17px;height:17px}
+.gtip b{font-size:13.5px;color:var(--ink);display:block;margin-bottom:2px}
+.gtip p{font-size:12.5px;color:var(--mute);line-height:1.55}

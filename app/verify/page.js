@@ -72,14 +72,14 @@ export default async function VerifyPage({ searchParams }) {
               <div className="vfbadge">{CheckIco} Email terverifikasi</div>
               <h1>Akunmu aktif.</h1>
               <p>Email berhasil dikonfirmasi. Sekarang kamu bisa masuk dan mengelola halaman Pautin-mu.</p>
-              <a className="vfcta" href="/app">Masuk ke dashboard</a>
+              <a className="vfcta" href="/dashboard">Masuk ke dashboard</a>
             </>
           ) : (
             <>
               <div className="vficon">{BadgeIco}</div>
               <h1>Tautan tidak valid atau kedaluwarsa.</h1>
               <p>Tautan verifikasi berlaku 24 jam dan sekali pakai. Minta tautan baru dari halaman masuk.</p>
-              <a className="vflnk" href="/app">Ke halaman masuk</a>
+              <a className="vflnk" href="/dashboard">Ke halaman masuk</a>
             </>
           )}
         </div>

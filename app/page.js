@@ -100,6 +100,14 @@ export default function Landing() {
         details.fq .ab{padding:0 20px 18px;color:${MUTE};font-size:13.8px;line-height:1.75}
         @media(max-width:920px){.hero .grid{grid-template-columns:1fr!important;gap:64px;text-align:center}.hero .ctr{margin:0 auto}.hero .mid{justify-content:center}.steps{grid-template-columns:1fr!important}.namegrid{grid-template-columns:1fr!important}.floater{display:none}}
         @media(max-width:560px){.statsg{grid-template-columns:1fr 1fr!important}.phonew{transform:scale(.94)}}
+        .ubtn{width:40px;height:40px;border-radius:50%;background:#0F5B4D;color:#F7F0E3;font-weight:800;font-size:13px;cursor:pointer;border:2px solid #fff;box-shadow:0 10px 24px -12px rgba(11,30,25,.55);display:flex;align-items:center;justify-content:center;font-family:var(--font-sora),sans-serif}
+        .udrop{position:absolute;right:0;top:calc(100% + 13px);min-width:235px;background:#FFFCF5;border:1.5px solid #E6DECB;border-radius:18px;box-shadow:0 30px 60px -25px rgba(11,30,25,.45);padding:8px;z-index:70}
+        .udrop::before{content:"";position:absolute;top:-6px;right:17px;width:12px;height:12px;background:#FFFCF5;border-left:1.5px solid #E6DECB;border-top:1.5px solid #E6DECB;transform:rotate(45deg)}
+        .uhead{padding:10px 12px 8px;border-bottom:1px solid #EFE9DB;margin-bottom:6px}
+        .uhead b{display:block;color:#14231E;font-size:13.5px;font-family:var(--font-sora),sans-serif}
+        .uhead span{color:#5F6F68;font-size:11.5px;font-weight:700}
+        .udrop a,.udrop button{display:flex;width:100%;text-align:left;padding:9px 12px;border-radius:11px;font-size:13.5px;font-weight:700;color:#14231E;text-decoration:none;align-items:center;gap:9px;background:none;border:0;cursor:pointer;font-family:inherit}
+        .udrop a:hover,.udrop button:hover{background:#F1EBDD}
       `}</style>
       <div style={{ minHeight: "100vh", background: CREAM, color: INK, overflowX: "hidden" }}>
         <nav style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 60, background: "rgba(247,243,234,.85)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: `1px solid ${LINE}` }}>
@@ -107,10 +115,11 @@ export default function Landing() {
             <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 800, fontSize: 19, fontFamily: "var(--font-sora),sans-serif", letterSpacing: "-.3px", color: INK }}>
               <Mark s={30} />Pautin
             </a>
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <a href="/app" style={{ color: INK, fontWeight: 700, fontSize: 14, padding: "9px 16px", borderRadius: 999 }}>Masuk</a>
-              <a href="/app?signup=1" className="btn" style={{ fontSize: 13.5, padding: "10px 20px" }}>Daftar Gratis</a>
-            </div>
+            <span id="guestNav" style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
+              <a href="/dashboard" style={{ color: INK, fontWeight: 700, fontSize: 14, padding: "9px 16px", borderRadius: 999 }}>Masuk</a>
+              <a href="/dashboard?signup=1" className="btn" style={{ fontSize: 13.5, padding: "10px 20px" }}>Daftar Gratis</a>
+            </span>
+            <div id="userNav" style={{ display: "none", position: "relative" }}></div>
           </div>
         </nav>
 
@@ -132,7 +141,7 @@ export default function Landing() {
                 alamat singkat yang siap dibagikan ke mana saja.
               </p>
               <div className="mid" style={{ display: "flex", gap: 13, flexWrap: "wrap", marginBottom: 16 }}>
-                <a href="/app?signup=1" className="btn">Buat Halaman Gratis {I.arrow}</a>
+                <a href="/dashboard?signup=1" className="btn">Buat Halaman Gratis {I.arrow}</a>
                 <a href="#lihat" className="btn ghost">Lihat Tampilannya</a>
               </div>
               <p style={{ fontSize: 13, color: MUTE, display: "flex", alignItems: "center", gap: 8 }}>
@@ -299,7 +308,7 @@ export default function Landing() {
               <p style={{ color: "rgba(247,240,227,.72)", maxWidth: 460, margin: "0 auto 30px", fontSize: 15.5, lineHeight: 1.75 }}>
                 Daftar sekarang, gratis. Ambil username favoritmu sebelum kehabisan.
               </p>
-              <a href="/app?signup=1" className="btn" style={{ background: OR, boxShadow: "0 16px 36px -12px rgba(228,87,46,.9)" }}>Mulai Sekarang {I.arrow}</a>
+              <a href="/dashboard?signup=1" className="btn" style={{ background: OR, boxShadow: "0 16px 36px -12px rgba(228,87,46,.9)" }}>Mulai Sekarang {I.arrow}</a>
             </div>
           </div>
         </section>
@@ -319,6 +328,34 @@ export default function Landing() {
           </div>
         </footer>
       </div>
+      <script dangerouslySetInnerHTML={{ __html: `(function(){
+        function esc(s){return String(s||"").replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+        fetch("/api/me").then(function(r){return r.json();}).then(function(d){
+          var u=d&&d.user; if(!u)return;
+          var g=document.getElementById("guestNav"),v=document.getElementById("userNav"); if(!g||!v)return;
+          var ini=(u.name||u.username||"?").trim().split(/\s+/).map(function(w){return w.charAt(0);}).join("").slice(0,2).toUpperCase();
+          v.innerHTML='<button id="uBtn" class="ubtn" aria-label="Menu akun" title="'+esc(u.name)+'">'+ini+'</button><div id="uDrop" class="udrop" hidden></div>';
+          var drop=document.getElementById("uDrop"),btn=document.getElementById("uBtn");
+          drop.innerHTML='<div class="uhead"><b>'+esc(u.name)+'</b><span>@'+esc(u.username)+'</span></div>'
+            +'<a href="/dashboard">Dashboard</a>'
+            +'<a href="/u/'+esc(u.username)+'" target="_blank" rel="noopener">Buka halaman publik</a>'
+            +'<button type="button" data-u="copy">Salin link halaman</button>'
+            +'<button type="button" data-u="logout" style="color:#C5422F">Keluar</button>';
+          g.style.display="none"; v.style.display="block";
+          btn.addEventListener("click",function(e){e.stopPropagation();drop.hidden=!drop.hidden;});
+          document.addEventListener("click",function(){drop.hidden=true;});
+          drop.addEventListener("click",function(e){
+            var t=e.target.closest?e.target.closest("[data-u]"):null; if(!t)return;
+            if(t.getAttribute("data-u")==="logout"){fetch("/api/logout",{method:"POST",credentials:"same-origin"}).then(function(){location.reload();}).catch(function(){location.reload();});}
+            else if(t.getAttribute("data-u")==="copy"){
+              var url=location.origin+"/u/"+u.username;
+              function ok(){btn.title="Link halaman disalin.";}
+              if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(ok);}
+              else{var ta=document.createElement("textarea");ta.value=url;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");}catch(e2){}ta.remove();ok();}
+            }
+          });
+        }).catch(function(){});
+      })()` }} />
     </>
   );
 }

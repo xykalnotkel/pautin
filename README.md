@@ -21,7 +21,7 @@ dua sisi yang tersambung jadi satu — kamu dan semua tautanmu.
 - **Folder/grup tautan**: judul seksi otomatis di halaman publik
 - Pelacakan klik per link · tombol bagikan / salin · SEO & Open Graph per user · responsif
 
-**Dashboard** `/app`
+**Dashboard** `/dashboard` (alamat lama /dashboard otomatis dialihkan)
 - Registrasi + verifikasi email (wajib) · login (PBKDF2-SHA256 120.000 iterasi + salt, sesi aman)
 - **Lupa kata sandi**: tautan atur ulang sekali pakai via email (berlaku 1 jam)
 - Cek username tersedia real-time · tambah/edit/hapus link dengan ikon, kategori grup, dan prefix `https://` otomatis
@@ -81,7 +81,7 @@ pautin-next/
 │  ├─ layout.js / globals.css / icon.svg   # root layout, favicon
 │  ├─ page.js                              # landing (termasuk cerita nama Pautin)
 │  ├─ not-found.js
-│  ├─ app/page.js + layout.js              # shell dashboard (SPA client)
+│  ├─ dashboard/page.js + layout.js        # dashboard (SPA client) di /dashboard
 │  ├─ u/[username]/page.js                 # halaman publik (SSR dinamis)
 │  ├─ verify/page.js · reset/page.js       # verifikasi email & atur ulang kata sandi
 │  └─ api/                                 # route handlers:

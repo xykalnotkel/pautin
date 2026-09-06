@@ -80,7 +80,7 @@ window.__pautinBoot = async function () {
     await ensureCfg();
     renderAuth(qs.get("signup") === "1" ? "signup" : "login");
   }
-  history.replaceState(null, "", "/app");
+  history.replaceState(null, "", "/dashboard");
 };
 window.__pautinEnter = async function (welcome) {
   const d = await get("me");
@@ -320,6 +320,35 @@ function bindAuthActions(mode) {
   aU.addEventListener("keydown", (e) => { if (e.key === "Enter") window.__authOnSubmit(); });
 }
 
+/* ================= navigasi sidebar (menu dashboard) ================= */
+function navItem(k, label, badgeId) {
+  return `<button type="button" class="ni" data-nav="${k}"><span>${label}</span>${badgeId ? `<i class="nb" id="${badgeId}">0</i>` : ""}</button>`;
+}
+function navLink(href, label) {
+  return `<a class="ni" href="${href}"><span>${label}</span></a>`;
+}
+function navGroup(gid, title, inner) {
+  return `<button type="button" class="ngt" data-ngt="${gid}" aria-expanded="true">${title}${ic("chevD")}</button>
+  <div class="ng" data-ng="${gid}">${inner}</div>`;
+}
+function navHtmlDash() {
+  return `<div class="card" id="navCard">
+    <div class="cardh"><div class="t">${ic("menu")} Menu</div></div>
+    ${navGroup("ng1", "Ringkasan",
+      navItem("home", "Beranda") + navItem("refresh", "Segarkan data") + navItem("stats", "Statistik 30 hari", "nViewCnt") + navItem("links", "Tautan saya", "nLinkCnt") + navItem("add", "Tambah tautan") + navItem("groups", "Grup & folder"))}
+    ${navGroup("ng2", "Bagikan",
+      navItem("share", "Bagikan halaman") + navItem("qr", "QR code") + navItem("page", "Buka halaman publik") + navItem("copyurl", "Salin link halaman") + navItem("copyuser", "Salin username"))}
+    ${navGroup("ng3", "Akun",
+      navItem("profile", "Edit nama & bio") + navItem("photo", "Foto profil") + navItem("security", "Verifikasi email") + navItem("pass", "Ganti kata sandi") + navItem("logout", "Keluar"))}
+    ${navGroup("ng4", "Tampilan & tema",
+      navItem("theme", "Pratinjau & tema") + navItem("picktheme", "Pilih tema") + navItem("radius", "Bentuk tombol") + navItem("grid", "Gaya daftar") + navItem("av", "Bentuk foto") + navItem("font", "Gaya huruf") + navItem("accent", "Warna aksen") + navItem("defaults", "Reset tampilan"))}
+    ${navGroup("ng5", "Bantuan & info",
+      navItem("guide", "Panduan cepat") + navLink("/about", "Tentang Pautin") + navLink("/legal/terms", "Syarat & ketentuan") + navLink("/legal/privacy", "Kebijakan privasi") + navLink("/legal/license", "Lisensi & kredit"))}
+    ${navGroup("ng6", "Lainnya",
+      navItem("navtoggle", "Sembunyikan panel menu"))}
+  </div>`;
+}
+
 /* ================= DASHBOARD ================= */
 function renderDashboard(isNew) {
   const u = S.u;
@@ -344,7 +373,8 @@ function renderDashboard(isNew) {
 
   <div class="lay">
     <aside class="side">
-      <div class="card">
+      ${navHtmlDash()}
+      <div class="card" id="cardTheme">
         <div class="cardh"><div class="t">${ic("palette")} Pratinjau dan tema</div></div>
         <div class="pvtop"><a href="/u/${esc(u.username)}" target="_blank" rel="noopener">@${esc(u.username)}</a>
           <button class="ob oj" data-act="profile" title="Edit profil">${ic("pencil")}</button>
@@ -645,6 +675,7 @@ async function delLink(id) {
 function renderLinks() {
   const wrap = $("#linkList"); if (!wrap) return;
   $("#lCnt").textContent = S.links.length;
+  $("#nLinkCnt") && ($("#nLinkCnt").textContent = S.links.length);
   $("#listSub").textContent = S.links.length ? `total ${S.links.length} tautan` : "";
   if (!S.links.length) {
     wrap.innerHTML = `<div class="empty"><div class="e">${ic("linkUI")}</div>
@@ -680,6 +711,7 @@ function updateStats() {
   $("#stClicks") && ($("#stClicks").textContent = fmtNum(S.totalClicks));
   $("#stLinks") && ($("#stLinks").textContent = S.links.length);
   $("#stJoin") && ($("#stJoin").textContent = fmtDate(S.u.created_at));
+  $("#nViewCnt") && ($("#nViewCnt").textContent = fmtNum(S.u.views));
 }
 function wireDnD(wrap) {
   let drag = null;
@@ -733,12 +765,153 @@ function rowEl2(l) {
 }
 function dragIdOf() { return 0; }
 
+/* ================= aksi menu navigasi ================= */
+function scrollToEl(el) { if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+async function dashLogout() {
+  window.__ptok = null;
+  try { await send("logout", "POST"); } catch {}
+  await ensureCfg(); renderAuth("login");
+}
+async function resetLook() {
+  if (!window.confirm("Kembalikan tema, aksen, dan bentuk tampilan ke bawaan?")) return;
+  try {
+    await send("settings", "PUT", { theme: "galaxy", accent: "", radius: "full", grid: "list", av: "circle", font: "sans" });
+    location.reload();
+  } catch (e) { toast(e.message, 1); }
+}
+function dashNav(k) {
+  const u = S.u;
+  switch (k) {
+    case "home": window.scrollTo({ top: 0, behavior: "smooth" }); break;
+    case "refresh": persistLinks().then(() => toast("Data diperbarui.")); break;
+    case "stats": openStats(); break;
+    case "links": scrollToEl($("#linkList")); break;
+    case "add": toggleAdd(true); setTimeout(() => scrollToEl($("#addCard")), 80); break;
+    case "groups": scrollToEl($("#linkList")); toast("Kelompok tautan diatur lewat kolom \"Grup\" saat menambah atau mengedit tautan."); break;
+    case "profile": openProfile(); break;
+    case "photo": openProfile(); break;
+    case "security": openSecurity("email"); break;
+    case "pass": openSecurity("pass"); break;
+    case "page": window.open("/u/" + u.username, "_blank"); break;
+    case "copyurl": copyText(loc(), "Link halaman disalin."); break;
+    case "copyuser": copyText("@" + u.username, "Username disalin."); break;
+    case "logout": dashLogout(); break;
+    case "share": openShare(); break;
+    case "qr": openShare(); setTimeout(() => { const mv = $("#mv"); if (!mv) return; const b = mv.querySelector(".box"), q = mv.querySelector(".qrow"); if (b && q) b.scrollTo({ top: q.offsetTop - 24, behavior: "smooth" }); }, 80); break;
+    case "theme": scrollToEl($("#cardTheme")); break;
+    case "picktheme": scrollToEl($("#thRow")); break;
+    case "radius": scrollToEl($("#radRow")); break;
+    case "grid": scrollToEl($("#gridRow")); break;
+    case "av": scrollToEl($("#avRow")); break;
+    case "font": scrollToEl($("#fontRow")); break;
+    case "accent": scrollToEl($("#accRow")); break;
+    case "defaults": resetLook(); break;
+    case "guide": openGuide(); break;
+    case "navtoggle": { const c = $("#navCard"); if (c) { c.hidden = !c.hidden; toast(c.hidden ? "Panel menu disembunyikan." : "Panel menu ditampilkan kembali."); } } break;
+  }
+}
+
+/* ================= modal keamanan ================= */
+function openSecurity(part) {
+  const u = S.u, mv = $("#mv"); if (!mv) return;
+  const ver = !!u.email_verified, hasMail = !!u.email;
+  mv.className = "mv show";
+  mv.innerHTML = `
+  <div class="box">
+    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
+    <h3>${ic("shield")} Keamanan akun</h3>
+    <div class="sub">Data masuk akun <b>@${esc(u.username)}</b>.</div>
+    <div class="er" id="seErr"></div>
+    <div class="secrow">
+      <div class="seinfo">
+        <b>Email</b>
+        <span class="sem">${hasMail ? esc(u.email) : "Belum ada email"}</span>
+        ${ver ? '<span class="pill ok">Terverifikasi</span>' : '<span class="pill no">Belum diverifikasi</span>'}
+      </div>
+      ${!ver && hasMail ? '<button class="tbtn" id="seResend">Kirim ulang verifikasi</button>' : ""}
+    </div>
+    <div class="sepline"></div>
+    <form id="seForm" class="frm" autocomplete="off">
+      <div class="fld full"><label>Kata sandi lama</label>
+        <div class="pwrow"><input id="seOld" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+        <div class="hint">${u.hasPassword ? "Wajib diisi dengan kata sandi saat ini." : "Akun dari Google/Discord — kosongkan bila belum pernah membuat kata sandi."}</div>
+      </div>
+      <div class="fld full"><label>Kata sandi baru</label>
+        <div class="pwrow"><input id="seNew" type="password" autocomplete="new-password" placeholder="••••••••"></div>
+        <div class="pwchk" id="seChk"><span data-k="len">8+ karakter</span><span data-k="num">angka</span><span data-k="mix">huruf kecil & besar</span></div>
+      </div>
+      <div class="fld full"><label>Ulangi kata sandi baru</label>
+        <div class="pwrow"><input id="seNew2" type="password" autocomplete="new-password" placeholder="••••••••"></div>
+      </div>
+      <div class="frow">
+        <button class="act" type="submit" style="flex:1">${ic("shield")} Simpan kata sandi baru</button>
+        <button class="tbtn" type="button" data-act="closeModal">Batal</button>
+      </div>
+    </form>
+  </div>`;
+  const rs = $("#seResend");
+  if (rs) rs.addEventListener("click", () => {
+    rs.disabled = true;
+    send("verify/resend", "POST", { email: u.email })
+      .then(() => { toast("Tautan verifikasi terkirim ulang."); })
+      .catch((e) => { rs.disabled = false; seErr(e.message); });
+  });
+  const chk = () => {
+    const v = $("#seNew").value, has = { len: v.length >= 8, num: /\d/.test(v), mix: /[a-z]/.test(v) && /[A-Z]/.test(v) };
+    ["len", "num", "mix"].forEach((k2) => { const c = $("#seChk") && $("#seChk").querySelector(`[data-k="${k2}"]`); if (c) c.classList.toggle("on", !!has[k2]); });
+  };
+  $("#seNew").addEventListener("input", chk);
+  $("#seForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const err = $("#seErr"); if (err) err.classList.remove("show");
+    const p1 = $("#seNew").value, p2 = $("#seNew2").value;
+    if (p1.length < 8) return seErr("Kata sandi baru minimal 8 karakter.");
+    if (!/\d/.test(p1)) return seErr("Kata sandi baru harus mengandung angka.");
+    if (!/[a-z]/.test(p1) || !/[A-Z]/.test(p1)) return seErr("Kata sandi baru harus punya huruf kecil dan besar.");
+    if (p1 !== p2) return seErr("Ulangi kata sandi tidak sama.");
+    const btn = $("#seForm").querySelector(".act"); btn.disabled = true;
+    try {
+      await send("password", "POST", { old: $("#seOld").value, password: p1 });
+      toast("Kata sandi baru disimpan.");
+      closeModal();
+    } catch (x) { btn.disabled = false; seErr(x.message); }
+  });
+}
+function seErr(m) { const e = $("#seErr"); if (!e) return; e.textContent = m; e.classList.add("show"); }
+
+/* ================= modal panduan ================= */
+function openGuide() {
+  const mv = $("#mv"); if (!mv) return;
+  const tips = [
+    ["linkUI", "Tambah tautan", "Klik \"Tambah Tautan\" lalu isi judul, URL, dan grup. Tautan media sosial otomatis jadi ikon bulat."],
+    ["palette", "Atur tampilan", "Pilih tema, bentuk tombol, gaya daftar, dan warna aksen — semua langsung terlihat di pratinjau."],
+    ["chart", "Pantau statistik", "Menu \"Statistik 30 hari\" menampilkan grafik kunjungan & klik serta tautan terpopuler."],
+    ["copy", "Bagikan", "Salin link halaman, bagikan ke WhatsApp/media sosial, atau unduh QR code untuk kartu nama."],
+    ["shield", "Keamanan", "Verifikasi email & ganti kata sandi tersedia di menu \"Akun\". Lupa sandi bisa direset dari halaman masuk."],
+    ["groups", "Grup", "Isi kolom \"Grup\" agar tautan tampil berkelompok dengan judul seksi di halaman publikmu."],
+  ];
+  mv.className = "mv show";
+  mv.innerHTML = `
+  <div class="box wide">
+    <button class="x2" data-act="closeModal" aria-label="Tutup">${ic("x")}</button>
+    <h3>${ic("doc")} Panduan cepat</h3>
+    <div class="sub">Enam hal yang paling sering dicari di dashboard.</div>
+    <div class="gtips">
+      ${tips.map(([icn, h, tx]) => `<div class="gtip"><span class="gti">${ic(icn)}</span><div><b>${h}</b><p>${tx}</p></div></div>`).join("")}
+    </div>
+    <div class="frow" style="margin-top:6px">
+      <a class="act" href="/about" style="flex:1;text-align:center;text-decoration:none">Tentang Pautin</a>
+      <button class="tbtn" data-act="closeModal">Tutup</button>
+    </div>
+  </div>`;
+}
+
 /* ================= aksi global dashboard ================= */
 function bindDashEvents() {
   rootEl().addEventListener("click", async (ev) => {
-    const t = ev.target.closest("[data-act]");
+    const t = ev.target.closest("[data-act],[data-nav],[data-ngt]");
     if (!t) return;
-    const act = t.dataset.act;
+    const act = t.dataset.act || "";
     const closeMenu = () => { const m = $("#menu"); if (m) m.classList.remove("open"); };
     if (act === "menu") { $("#menu").classList.toggle("open"); }
     else if (act === "logout") {
@@ -768,6 +941,11 @@ function bindDashEvents() {
     else if (act === "closeModal") closeModal();
     else if (act === "saveprofile") saveProfile();
     else if (act === "ava") $("#avaFile").click();
+    else if (t.dataset.ngt) {
+      const h = t, sec = rootEl().querySelector(`.ng[data-ng="${h.dataset.ngt}"]`);
+      if (sec) { const closed = sec.classList.toggle("closed"); h.classList.toggle("closed", closed); h.setAttribute("aria-expanded", String(!closed)); }
+    }
+    else if (t.dataset.nav) dashNav(t.dataset.nav);
   });
   // klik area gelap menutup modal
   $("#mv") && ($("#mv").addEventListener("click", (ev) => { if (ev.target.id === "mv") closeModal(); }));
