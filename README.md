@@ -2,7 +2,9 @@
 
 Aplikasi web ala **Linktree** berbasis **Next.js (App Router)** — multi-user, tiap user punya
 halaman profil berisi kumpulan link yang bisa dikelola dan dibagikan lewat satu tautan unik.
-**Siap deploy ke Vercel.**
+
+🌐 **Live:** https://pautin.vercel.app · 📦 **Repo:** https://github.com/xykalnotkel/pautin
+🧠 **Backend auth:** Cloudflare **D1** (database) + **Turnstile** (anti-bot daftar/masuk)
 
 ## ✨ Fitur
 
@@ -22,43 +24,47 @@ halaman profil berisi kumpulan link yang bisa dikelola dan dibagikan lewat satu 
 ```bash
 cd pautin-next
 npm install
-npm run seed      # (opsional) pastikan 3 akun demo ada
-npm run dev       # http://localhost:3000
+npm run seed   # (opsional) pastikan 3 akun demo ada
+npm run dev    # http://localhost:3000
 ```
 
-## ▲ Deploy ke Vercel
+Tanpa env apa pun, aplikasi otomatis memakai **SQLite lokal** (`data.db`).
 
-1. **Buat database gratis (Turso)** — direkomendasikan agar data persisten:
-   ```bash
-   npm i -g @libsql/turso 2>/dev/null
-   turso db create pautin
-   turso db show pautin --url          # → TURSO_DATABASE_URL
-   turso db tokens create pautin       # → TURSO_AUTH_TOKEN
-   ```
-2. **Push ke GitHub**:
-   ```bash
-   git init && git add -A && git commit -m "pautin"
-   ```
-3. **Vercel**: vercel.com → *Add New Project* → import repo → framework terdeteksi otomatis (**Next.js**).
-4. **Environment Variables** (Settings → Environment Variables):
-   | Nama | Nilai |
-   |---|---|
-   | `TURSO_DATABASE_URL` | `libsql://pautin-xxx.turso.io` |
-   | `TURSO_AUTH_TOKEN` | token dari langkah 1 |
-5. Deploy 🎉 — Vercel otomatis menjalankan `next build`.
+## 🧠 Backend & Cloudflare
 
-> Tanpa Turso pun tetap bisa deploy: Vercel memakai SQLite sementara per-instance (data
-> hilang saat instance di-recycle) — cocok untuk demo, bukan produksi.
+**Database — Cloudflare D1** (via HTTP API, adapter di `lib/db.js`):
+- Bila env `CLOUDFLARE_API_TOKEN` + `CF_ACCOUNT_ID` + `CF_D1_ID` di-set → pakai D1.
+- Selain itu → libSQL (Turso) / file SQLite. Skema & seed demo otomatis saat inisialisasi.
 
-**Import via Vercel CLI:**
-```bash
-npm i -g vercel
-vercel            # deploy preview
-vercel --prod     # deploy production
-```
+**Anti-bot — Cloudflare Turnstile** (`lib/turnstile.js`):
+- Form daftar/masuk menampilkan widget bila `TURNSTILE_SITE_KEY` ada; server memverifikasi
+  token ke `siteverify` bila `TURNSTILE_SECRET_KEY` di-set. Jika belum diset → dilewati (mode dev).
+
+**Sesi:** cookie `pt_sid` HttpOnly, plus fallback header `X-Auth-Token` (untuk lingkungan
+yang memblokir cookie). Password di-hash PBKDF2-SHA256 120k iterasi + salt acak.
 
 ### Akun demo (password: `demo123`)
 `rizky` (kreator) · `nadia` (foodie) · `kopikita` (kedai kopi)
+
+## ▲ Deploy / update di Vercel
+
+Project sudah terhubung. Env yang dibutuhkan (Settings → Environment Variables):
+
+| Nama | Keterangan |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | token API Cloudflare (izin D1) |
+| `CF_ACCOUNT_ID` | ID akun Cloudflare |
+| `CF_D1_ID` | ID database D1 `pautin` |
+| `TURNSTILE_SITE_KEY` | opsional — site key Turnstile |
+| `TURNSTILE_SECRET_KEY` | opsional — secret key Turnstile |
+
+Setelah edit kode:
+
+```bash
+git add -A && git commit -m "..." && git push
+# lalu deploy dari folder:
+npx vercel --prod        # (CLI sudah ter-link ke project pautin)
+```
 
 ## 📁 Struktur
 
@@ -66,19 +72,20 @@ vercel --prod     # deploy production
 pautin-next/
 ├─ app/
 │  ├─ layout.js / globals.css / icon.svg   # root layout, favicon
-│  ├─ page.js                              # landing (SSR/static)
+│  ├─ page.js                              # landing
 │  ├─ not-found.js
 │  ├─ app/page.js + layout.js              # shell dashboard (SPA client)
 │  ├─ u/[username]/page.js                 # halaman publik (SSR dinamis)
 │  └─ api/                                 # route handlers:
-│     ├─ register · login · logout · me · check
+│     ├─ register · login · logout · me · check · config
 │     ├─ profile · settings · reorder
 │     └─ links · links/[id] · links/click/[id]
 ├─ lib/
-│  ├─ db.js        # klien libSQL (file: SQLite lokal ↔ Turso cloud), skema, seed demo, validasi
-│  ├─ auth.js      # PBKDF2, sesi (cookie HttpOnly + fallback header X-Auth-Token)
-│  └─ theme.js     # 8 tema, ikon sosial, render HTML halaman publik
-├─ public/a/       # CSS & JS dashboard (SPA legacy, dimuat di /app)
+│  ├─ db.js        # dual-storage: D1 (Cloudflare) ↔ libSQL lokal; skema, seed, validasi
+│  ├─ auth.js      # PBKDF2, sesi cookie + header
+│  ├─ turnstile.js # verifikasi Turnstile (opsional)
+│  └─ theme.js     # 8 tema, ikon sosial, render halaman publik
+├─ public/a/       # CSS & JS dashboard
 ├─ scripts/seed.js
 └─ package.json    # next 15 · react 19 · @libsql/client
 ```
@@ -87,24 +94,19 @@ pautin-next/
 
 | Method | Path | Fungsi |
 |---|---|---|
-| POST | `/api/register` / `/api/login` | daftar / masuk → cookie + `{token}` |
+| POST | `/api/register` / `/api/login` | daftar / masuk (Turnstile bila aktif) → cookie + `{token}` |
 | POST | `/api/logout` | keluar |
 | GET | `/api/me` | profil + links + statistik |
 | GET | `/api/check?u=...` | cek username tersedia |
+| GET | `/api/config` | konfig publik (mis. `turnstileSiteKey`) |
 | PUT | `/api/profile` · `/api/settings` | ubah profil / tema |
 | POST | `/api/links` · PUT/DELETE `/api/links/<id>` | kelola link |
 | POST | `/api/links/click/<id>` | catat klik (publik) |
 | POST | `/api/reorder` | simpan urutan |
 
-Sesi otentikasi: cookie `pt_sid` (HttpOnly) **atau** header `X-Auth-Token` (fallback untuk
-iframe preview yang memblokir cookie).
-
 ## 🛡 Keamanan
 - Password PBKDF2-SHA256 120k iterasi + salt acak · perbandingan timing-safe
 - Semua output user di-escape (anti-XSS) · SQL pakai parameter binding (anti-injection)
 - Username divalidasi regex + daftar cadangan · validasi URL ketat · ownership link selalu dicek
-- Dashboard `noindex` agar tidak muncul di hasil pencarian
-
-## 📁 Lainnya
-- `pautin-python-legacy/` — versi Python murni sebelumnya (tanpa dependency), tetap bisa
-  dijalankan `python3 server.py` jika suatu saat ingin versi non-Node.
+- Dashboard `noindex` · Turnstile opsional anti-bot
+- File `.env.example` berisi placeholder — kunci asli **tidak pernah** masuk git
