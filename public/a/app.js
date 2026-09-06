@@ -9,19 +9,19 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const S = { u: null, links: [], totalClicks: 0, showAdd: false, editing: null, iconKey: "" };
 const ic = (k) => (window.PTIcons && PTIcons.ui[k]) || "";
 const gn = (k) => (window.PTIcons && PTIcons.gen[k]) || ic("globe");
-const svgWrap = (p) => `<svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20" aria-hidden="true">${p}</svg>`;
+const svgWrap = (p, color) => `<svg viewBox="0 0 24 24" fill="${color || "currentColor"}" width="20" height="20" aria-hidden="true">${p}</svg>`;
 
 function linkIcon(l) {
   if (l.emoji) {
     const g = window.PTIcons && PTIcons.gen[l.emoji];
     if (g) return g;
-    if (l.emoji.startsWith("b:")) { const p = window.PTIcons && PTIcons.brand[l.emoji.slice(2)]; if (p) return svgWrap(p); }
+    if (l.emoji.startsWith("b:")) { const k = l.emoji.slice(2); const p = window.PTIcons && PTIcons.brand[k]; if (p) return svgWrap(p, PTIcons.colors && PTIcons.colors[k]); }
   }
   const b = window.PTIcons && PTIcons.brand[l.kind];
-  if (b) return svgWrap(b);
+  if (b) return svgWrap(b, PTIcons.colors && PTIcons.colors[l.kind]);
   return gn("globe");
 }
-function brandChip(k) { const p = window.PTIcons && PTIcons.brand[k]; return p ? svgWrap(p) : ""; }
+function brandChip(k) { const p = window.PTIcons && PTIcons.brand[k]; return p ? svgWrap(p, PTIcons.colors && PTIcons.colors[k]) : ""; }
 
 /* ================= net ================= */
 function api(path, opt) {
@@ -31,7 +31,7 @@ function api(path, opt) {
   if (opt.body && typeof opt.body === "string") opt.headers["Content-Type"] = "application/json";
   return fetch("/api/" + path, opt).then(async (r) => {
     let d = {}; try { d = await r.json(); } catch {}
-    if (!r.ok) { const e = new Error(d.error || "Terjadi kesalahan"); e.status = r.status; throw e; }
+    if (!r.ok) { const e = new Error(d.error || "Terjadi kesalahan"); e.status = r.status; e.data = d; throw e; }
     return d;
   });
 }
@@ -112,40 +112,100 @@ window.__pautinEnter = async function (welcome) {
 };
 
 /* ================= AUTH ================= */
+const cfg = () => window.__cfg || {};
+const socialBtn = (id, label, inner) =>
+  `<a class="socbtn ${id}" href="/api/auth/${id}" rel="noopener">${inner}<span>${label}</span></a>`;
+const socRow = () => {
+  const list = (cfg().social || []).filter((x) => x === "google" || x === "discord");
+  if (!list.length) return "";
+  const btns = {
+    google: socialBtn("google", "Google", '<img src="https://www.gstatic.com/images/branding/googleg/2x/googleg_standard_color_48dp.png" width="18" height="18" alt="" aria-hidden="true">'),
+    discord: socialBtn("discord", "Discord", '<svg viewBox="0 0 24 24" fill="currentColor" width="19" height="19" aria-hidden="true"><path d="M20.317 4.3698a19.79 19.79 0 0 0-4.885-1.5152.0741.0741 0 0 0-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 0 0-.0785-.037 19.7363 19.7363 0 0 0-4.8852 1.515.0699.0699 0 0 0-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 0 0 .0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 0 0 .0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 0 0-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 0 1-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 0 1 .0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 0 1 .0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 0 1-.0066.1276 12.2986 12.2986 0 0 1-1.873.8914.0766.0766 0 0 0-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 0 0 .0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 0 0 .0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 0 0-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg>'),
+  };
+  return `<div class="odiv">atau lanjutkan dengan</div><div class="socrow">${list.map((x) => btns[x]).join("")}</div>`;
+};
+const maskM = (e) => { const [a, b] = String(e || "").split("@"); if (!b) return e; return a.slice(0, Math.max(1, a.length - 2)) + "•••" + a.slice(-1) + "@" + b; };
+
 function renderAuth(mode) {
   const m = mode === "signup" ? "signup" : "login";
-  const swapMode = () => renderAuth(m === "signup" ? "login" : "signup");
   rootEl().innerHTML = `
   <div class="auth"><div class="abox">
     <div class="alogo">${ic("logo")}<span>Pautin</span></div>
     <div class="ahead">
       <h1>${m === "signup" ? "Buat halaman gratis" : "Selamat datang kembali"}</h1>
-      <p>${m === "signup" ? "Pilih username, tambah tautan, langsung bagikan." : "Masuk untuk mengelola semua tautanmu."}</p>
+      <p>${m === "signup" ? "Satu email untuk mengaktifkan akun, lalu bagikan semua tautanmu." : "Masuk dengan username/email untuk mengelola halamanmu."}</p>
     </div>
     <div class="aerr" id="aerr"></div>
-    ${m === "login" ? '<div class="demoalert" id="demoC"><span>Punya akun demo? <b>rizky / demo123</b></span><button data-act="filldemo">Isi otomatis</button></div>' : ""}
+    ${socRow()}
     <div class="af">
-      <div class="fld"><label>Username</label>
-        <input id="aU" autocomplete="username" maxlength="20" placeholder="mis. rizky" value="">
+      <div class="fld"><label>Username ${m === "login" ? "atau email" : ""}</label>
+        <input id="aU" autocomplete="username" ${m === "signup" ? 'maxlength="20"' : ""} placeholder="${m === "signup" ? "mis. rizky" : "mis. rizky atau emailmu"}" value="">
         ${m === "signup" ? '<div class="hint" id="uHint" style="font-weight:800">&nbsp;</div>' : ""}
       </div>
+      ${m === "signup" ? `<div class="fld"><label>Email <span class="req">wajib — untuk verifikasi</span></label><input id="aE" type="email" autocomplete="email" maxlength="120" placeholder="kamu@contoh.com"></div>` : ""}
       ${m === "signup" ? '<div class="fld"><label>Nama tampilan <span class="opt">opsional</span></label><input id="aN" maxlength="60" placeholder="mis. Rizky Pratama"></div>' : ""}
       <div class="fld"><label>Kata sandi ${m === "signup" ? '<span class="opt">min. 6 karakter</span>' : ""}</label>
         <div class="pwrow"><input id="aP" type="password" autocomplete="${m === "signup" ? "new-password" : "current-password"}" placeholder="••••••••"><button class="eye" data-act="eyetoggle" aria-label="Lihat kata sandi">${ic("eye")}</button></div>
       </div>
     </div>
-    <button class="act abtn" id="aGo" data-act="submit">${m === "signup" ? "Daftar dan buat halaman" : "Masuk"} ${ic("arrowR")}</button>
-    <div id="tstWrap" style="margin-top:14px;display:flex;justify-content:center"></div>
+    <button class="act abtn" id="aGo" data-act="submit">${m === "signup" ? "Daftar dan kirim verifikasi" : "Masuk"} ${ic("arrowR")}</button>
+    <div id="tstWrap" style="margin-top:12px;display:flex;justify-content:center"></div>
     <p class="asub">${m === "signup" ? "Sudah punya akun? " : "Belum punya akun? "}<a href="#" data-act="swap">${m === "signup" ? "Masuk" : "Daftar gratis"}</a></p>
   </div></div>`;
-  if (m === "login") $("#demoC").hidden = false;
   bindAuthActions(m);
+  mountTurnstile();
+  if (new URLSearchParams(location.search).get("authfail")) authErr("Masuk dengan akun sosial gagal. Coba lagi atau gunakan username/email.");
+}
+
+function renderMailCheck(email, devLink) {
+  rootEl().innerHTML = `
+  <div class="auth"><div class="abox">
+    <div class="mailic"><span class="maili">${ic("check")}</span></div>
+    <div class="ahead"><h1>Cek emailmu</h1>
+      <p>Kami kirim tautan verifikasi ke <b class="mailto">${esc(maskM(email))}</b>. Klik tautan itu untuk mengaktifkan akunmu, lalu kembali ke sini untuk masuk.</p></div>
+    <div class="aerr" id="aerr"></div>
+    ${devLink ? `<div class="devlink">Mode pengembangan (email belum disetel): <a href="${esc(devLink)}">buka tautan verifikasi</a></div>` : ""}
+    <div class="vacts">
+      <button class="act" id="aRs" data-act="resend">${ic("arrowR")} Kirim ulang tautan</button>
+      <button class="tbtn" data-act="swap">Kembali ke masuk</button>
+    </div>
+    <div id="tstWrap" style="margin-top:10px;display:flex;justify-content:center"></div>
+    <p class="asub" style="margin-top:14px">Tidak sampai? Cek folder spam, atau tunggu 60 detik sebelum kirim ulang.</p>
+  </div></div>`;
+  window.__pendEmail = email;
+  window.__authMode = "mail";
+  window.__authOnSubmit = null;
+  window.__authOnResend = () => {
+    const btn = $("#aRs");
+    if (!btn || btn.disabled) return;
+    btn.disabled = true;
+    send("verify/resend", "POST", { email: window.__pendEmail || "", turnstileToken: tsToken() })
+      .then(() => { btn.disabled = false; toast("Tautan verifikasi terkirim ulang."); })
+      .catch((e) => { btn.disabled = false; authErr(e.message); });
+  };
   mountTurnstile();
 }
 
 const authErr = (m) => { const e = $("#aerr"); if (!e) return; e.textContent = m; e.classList.add("show"); };
 
+function ensureAuthDelegation() {
+  if (window.__authDelegate) return;
+  window.__authDelegate = (ev) => {
+    const t = ev.target.closest("[data-act]");
+    if (!t) return;
+    const act = t.dataset.act;
+    if (act === "swap") { ev.preventDefault(); renderAuth(window.__authMode === "mail" ? "login" : window.__authMode === "signup" ? "login" : "signup"); }
+    else if (act === "eyetoggle") { const i = t.parentElement.querySelector("input"); i.type = i.type === "password" ? "text" : "password"; t.innerHTML = i.type === "password" ? ic("eye") : ic("eyeOff"); }
+    else if (act === "submit" && window.__authOnSubmit) window.__authOnSubmit();
+    else if (act === "resend" && window.__authOnResend) window.__authOnResend();
+  };
+  rootEl().addEventListener("click", window.__authDelegate);
+}
+
 function bindAuthActions(mode) {
+  window.__authMode = mode;
+  window.__authOnResend = null;
+  ensureAuthDelegation();
   const aU = $("#aU"), aP = $("#aP");
   let uT;
   if (mode === "signup") {
@@ -164,40 +224,40 @@ function bindAuthActions(mode) {
       }, 300);
     });
   }
-  const submit = () => {
+  window.__authOnSubmit = () => {
     const go = $("#aGo");
-    if (go.disabled) return;
-    const err = $("#aerr"); err.classList.remove("show");
+    if (!go || go.disabled) return;
+    const err = $("#aerr"); if (err) err.classList.remove("show");
     if (window.__cfg && window.__cfg.turnstileSiteKey && !window.__tsToken) {
-      err.textContent = "Selesaikan verifikasi keamanan di bawah dulu ya."; err.classList.add("show"); return;
+      authErr("Selesaikan verifikasi keamanan di bawah dulu ya."); return;
     }
     const u = aU.value.trim().toLowerCase(), p = aP.value;
     go.disabled = true;
-    const done = (m) => { go.disabled = false; err.textContent = m; err.classList.add("show"); };
+    const done = (m) => { go.disabled = false; authErr(m); };
     if (mode === "signup") {
+      const em = ($("#aE") ? $("#aE").value : "").trim().toLowerCase();
       const n = ($("#aN") ? $("#aN").value : "").trim();
       if (!/^[a-z0-9]{3,20}$/.test(u)) return done("Username 3-20 huruf/angka kecil, tanpa spasi.");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return done("Alamat email tidak valid.");
       if (p.length < 6) return done("Kata sandi minimal 6 karakter.");
-      send("register", "POST", { username: u, name: n, password: p, turnstileToken: tsToken() })
-        .then(async (d) => { window.__ptok = d.token; try { await window.__pautinEnter(true); } catch { location.href = "/app"; } })
+      send("register", "POST", { username: u, name: n, email: em, password: p, turnstileToken: tsToken() })
+        .then((d) => {
+          if (!d.ok) return done(d.error || "Gagal mendaftar.");
+          renderMailCheck(d.email || em, d.devLink);
+          if (d.mailErr) setTimeout(() => authErr("Email belum terkirim (" + d.mailErr + "). Pakai tombol kirim ulang."), 500);
+        })
         .catch((e) => done(e.message));
     } else {
       send("login", "POST", { username: u, password: p, turnstileToken: tsToken() })
         .then(async (d) => { window.__ptok = d.token; try { await window.__pautinEnter(false); } catch { location.reload(); } })
-        .catch((e) => done(e.message));
+        .catch((e) => {
+          if (e.status === 403 && e.data && e.data.code === "unverified") renderMailCheck(e.data.email || u, null);
+          else done(e.message);
+        });
     }
   };
-  rootEl().addEventListener("click", (ev) => {
-    const t = ev.target.closest("[data-act]");
-    if (!t) return;
-    const act = t.dataset.act;
-    if (act === "swap") { ev.preventDefault(); renderAuth(mode === "signup" ? "login" : "signup"); }
-    else if (act === "eyetoggle") { const i = t.parentElement.querySelector("input"); i.type = i.type === "password" ? "text" : "password"; t.innerHTML = i.type === "password" ? ic("eye") : ic("eyeOff"); }
-    else if (act === "filldemo") { aU.value = "rizky"; aP.value = "demo123"; }
-    else if (act === "submit") submit();
-  });
-  aP.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
-  aU.addEventListener("keydown", (e) => { if (e.key === "Enter") submit(); });
+  aP.addEventListener("keydown", (e) => { if (e.key === "Enter") window.__authOnSubmit(); });
+  aU.addEventListener("keydown", (e) => { if (e.key === "Enter") window.__authOnSubmit(); });
 }
 
 /* ================= DASHBOARD ================= */
@@ -369,8 +429,15 @@ async function setRadius(k) { S.u.radius = k; $$("#radRow .sh").forEach((x) => x
 /* ================= ikon picker ================= */
 function renderIconPicker() {
   const grid = $("#iconGrid"); if (!grid) return;
-  const keys = Object.keys(window.PTIcons.gen);
-  grid.innerHTML = `<button class="ig none on" data-ic="" title="Tanpa ikon">Tanpa</button>` + keys.map((k) => `<button class="ig" data-ic="${k}" title="${k}">${gn(k)}</button>`).join("");
+  const gk = Object.keys(window.PTIcons.gen || {});
+  const bk = Object.keys(window.PTIcons.brand || {});
+  const br = bk.map((k) => {
+    const p = window.PTIcons.brand[k];
+    return `<button class="ig igb" data-ic="b:${esc(k)}" title="${esc(k)}">${p ? svgWrap(p, PTIcons.colors && PTIcons.colors[k]) : ""}</button>`;
+  }).join("");
+  grid.innerHTML = `<button class="ig none on" data-ic="" title="Tanpa ikon">Tanpa</button>` +
+    gk.map((k) => `<button class="ig" data-ic="${esc(k)}" title="${esc(k)}">${gn(k)}</button>`).join("") +
+    (bk.length ? `<span class="igsep"></span>${br}` : "");
   syncPicker();
 }
 function syncPicker() {

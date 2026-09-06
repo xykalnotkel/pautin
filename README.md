@@ -43,8 +43,10 @@ Tanpa env apa pun, aplikasi otomatis memakai **SQLite lokal** (`data.db`).
 **Sesi:** cookie `pt_sid` HttpOnly, plus fallback header `X-Auth-Token` (untuk lingkungan
 yang memblokir cookie). Password di-hash PBKDF2-SHA256 120k iterasi + salt acak.
 
-### Akun demo (password: `demo123`)
-`rizky` (kreator) · `nadia` (foodie) · `kopikita` (kedai kopi)
+### Verifikasi email
+Pendaftaran baru **wajib** email unik + verifikasi lewat tautan (dikirim dengan Resend,
+env `RESEND_API_KEY` + `RESEND_FROM`). Akun tanpa email terverifikasi tidak bisa masuk.
+Tidak ada lagi akun demo/seed otomatis.
 
 ## Deploy / update di Vercel
 
